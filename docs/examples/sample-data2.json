@@ -1,0 +1,31 @@
+[
+  {
+    "id": "1",
+    "profile": {
+      "name": "Alice",
+      "contact": {
+        "email": "a@example.com",
+        "phone": "123456"
+      }
+    },
+    "tags": [
+      "a",
+      "b",
+      "c"
+    ]
+  },
+  {
+    "id": "2",
+    "profile": {
+      "name": "Boby",
+      "contact": {
+        "email": "b@example.com",
+        "phone": "145656"
+      }
+    },
+    "tags": [
+      "a",
+      "b"
+    ]
+  }
+]

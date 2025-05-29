@@ -1,0 +1,46 @@
+[project]
+name = "fledjson"
+version = "0.1.0"
+description = "FleDjSON - Flet + Edit + JSON - JSONデータ編集・操作GUIアプリケーション"
+authors = [
+    {name = "yok-tottii",email = "1187860+fxdepth@usrs.noreply.github.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "flet[all] (==0.28.2)",
+    "pyinstaller (>=6.13.0,<7.0.0)"
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest (>=7.4.0,<8.0.0)",
+    "pytest-cov (>=4.1.0,<5.0.0)",
+    "pytest-mock (>=3.12.0,<4.0.0)"
+]
+
+[tool.poetry]
+package-mode = false
+
+
+[tool.flet]
+org = "yok-tottii"
+product = "FleDjSON"
+company = "yok-tottii"
+copyright = "Copyright (C) 2025 by yok-tottii"
+
+[tool.flet.app]
+path = "src"
+module_name = "main"
+assets_dir = "assets"
+
+[tool.flet.splash]
+color = "#FFFF00"
+dark_color = "#8B8000"
+web = false
+ios = false
+android = false
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

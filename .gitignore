@@ -1,0 +1,133 @@
+# Python関連
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.env
+.venv
+venv/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+pip-log.txt
+pip-delete-this-directory.txt
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+pytest-report.xml
+junit.xml
+pytestdebug.log
+
+# システムファイル
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*~
+*.tmp
+*.bak
+*.log
+desktop.ini
+
+# プロジェクト固有
+backup/
+log/
+logs/
+temp/
+tmp/
+Project.md
+CLAUDE.md
+test_results/
+test_summary*.txt
+
+# 内部ドキュメント（公開しない）
+docs-internal/
+/docs/design/
+/docs/implementation/
+/docs/specs/
+/docs/images/
+
+# VSCode設定
+.vscode/
+*.code-workspace
+
+# IDE設定
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+**/.claude
+*-win.zip
+FleDjSON.code-workspace
+
+# macOS固有
+.AppleDouble
+.LSOverride
+Icon
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+
+# Windows固有
+$RECYCLE.BIN/
+~$*
+*.lnk
+
+# pyenv
+.python-version
+
+# poetryのキャッシュと仮想環境
+.poetry/
+poetry.toml
+.venv/
+poetry/
+
+# デバッグファイル・テスト関連
+debug/
+debug.log
+test.json
+*.debug
+*.local
+*.sample
+*.example
+local_settings.py
+
+# データベースファイル
+*.sqlite
+*.sqlite3
+*.db

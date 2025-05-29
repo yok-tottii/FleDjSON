@@ -1,0 +1,934 @@
+[
+  {
+    "organization": {
+      "id": "org-12345",
+      "name": "アクメコーポレーション",
+      "established": 1985,
+      "headquarters": {
+        "address": {
+          "street": "123 テクノロジーパーク",
+          "city": "東京",
+          "region": "関東",
+          "country": "日本",
+          "postalCode": "100-0001",
+          "coordinates": {
+            "latitude": 35.6895,
+            "longitude": 139.6917
+          }
+        },
+        "facilities": {
+          "mainBuilding": {
+            "floors": 25,
+            "totalArea": 50000,
+            "units": "sqm",
+            "amenities": [
+              "カフェテリア",
+              "ジム",
+              "会議室",
+              "イノベーションラボ"
+            ],
+            "departments": [
+              {
+                "name": "研究開発",
+                "floor": 15,
+                "employees": 120,
+                "projects": [
+                  {
+                    "id": "proj-001",
+                    "name": "次世代AIシステム",
+                    "budget": 2500000,
+                    "status": "進行中",
+                    "startDate": "2024-01-15",
+                    "endDate": "2025-06-30",
+                    "milestones": [
+                      {
+                        "name": "要件定義",
+                        "date": "2024-02-28",
+                        "completed": true,
+                        "deliverables": [
+                          "要件文書",
+                          "ユースケース図",
+                          "技術仕様書"
+                        ]
+                      },
+                      {
+                        "name": "プロトタイプ開発",
+                        "date": "2024-05-15",
+                        "completed": true,
+                        "deliverables": [
+                          "プロトタイプアプリ",
+                          "デモ資料",
+                          "ユーザーフィードバック"
+                        ]
+                      },
+                      {
+                        "name": "ベータ版リリース",
+                        "date": "2024-09-30",
+                        "completed": false,
+                        "deliverables": [
+                          "ベータアプリケーション",
+                          "ユーザーマニュアル",
+                          "APIドキュメント"
+                        ]
+                      },
+                      {
+                        "name": "本番リリース",
+                        "date": "2025-03-15",
+                        "completed": false,
+                        "deliverables": [
+                          "製品版",
+                          "マーケティング資料",
+                          "サポート文書"
+                        ]
+                      }
+                    ],
+                    "team": {
+                      "lead": {
+                        "id": "emp-0042",
+                        "name": "山田太郎",
+                        "title": "シニアリサーチディレクター",
+                        "expertise": [
+                          "機械学習",
+                          "コンピュータビジョン",
+                          "自然言語処理"
+                        ],
+                        "contact": {
+                          "email": "t.yamada@acmecorp.example.jp",
+                          "phone": "+81-3-1234-5678",
+                          "office": "15F-A23"
+                        },
+                        "directReports": [
+                          {
+                            "id": "emp-0087",
+                            "name": "鈴木花子",
+                            "title": "リードエンジニア",
+                            "expertise": [
+                              "バックエンド開発",
+                              "クラウドアーキテクチャ"
+                            ],
+                            "performance": {
+                              "2023": {
+                                "rating": 4.8,
+                                "achievements": [
+                                  "クラウド移行プロジェクトリード",
+                                  "コスト削減イニシアチブ"
+                                ],
+                                "developmentAreas": [
+                                  "チームマネジメント"
+                                ]
+                              }
+                            }
+                          },
+                          {
+                            "id": "emp-0092",
+                            "name": "佐藤健",
+                            "title": "AIリサーチャー",
+                            "expertise": [
+                              "深層学習",
+                              "強化学習",
+                              "データ分析"
+                            ],
+                            "performance": {
+                              "2023": {
+                                "rating": 4.5,
+                                "achievements": [
+                                  "3本の研究論文発表",
+                                  "特許2件出願"
+                                ],
+                                "developmentAreas": [
+                                  "プロジェクト管理"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      "members": [
+                        {
+                          "id": "emp-0105",
+                          "name": "高橋美咲",
+                          "title": "UIデザイナー",
+                          "expertise": [
+                            "UXデザイン",
+                            "プロトタイピング",
+                            "ユーザーリサーチ"
+                          ],
+                          "currentTasks": [
+                            {
+                              "id": "task-0356",
+                              "name": "ダッシュボードUIデザイン",
+                              "deadline": "2024-06-15",
+                              "status": "進行中",
+                              "dependencies": [
+                                "task-0301",
+                                "task-0299"
+                              ],
+                              "subtasks": [
+                                {
+                                  "name": "ユーザーフローマッピング",
+                                  "completed": true
+                                },
+                                {
+                                  "name": "ワイヤーフレーム作成",
+                                  "completed": true
+                                },
+                                {
+                                  "name": "ビジュアルデザイン",
+                                  "completed": false
+                                },
+                                {
+                                  "name": "プロトタイプテスト",
+                                  "completed": false
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "id": "emp-0112",
+                          "name": "伊藤翔太",
+                          "title": "バックエンドエンジニア",
+                          "expertise": [
+                            "Python",
+                            "マイクロサービス",
+                            "データベース設計"
+                          ],
+                          "currentTasks": [
+                            {
+                              "id": "task-0362",
+                              "name": "APIゲートウェイ実装",
+                              "deadline": "2024-06-30",
+                              "status": "進行中",
+                              "dependencies": [
+                                "task-0340"
+                              ],
+                              "blockers": [
+                                {
+                                  "description": "クラウドプロバイダーのAPI制限",
+                                  "mitigation": "サービスチームと協議中",
+                                  "expectedResolution": "2024-06-10"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ],
+                      "contractors": [
+                        {
+                          "id": "cont-023",
+                          "company": "テックコンサルタンツ株式会社",
+                          "personnel": [
+                            {
+                              "name": "中村雄太",
+                              "expertise": [
+                                "クラウドセキュリティ",
+                                "コンプライアンス"
+                              ],
+                              "contract": {
+                                "startDate": "2024-03-01",
+                                "endDate": "2024-08-31",
+                                "rate": {
+                                  "amount": 15000,
+                                  "unit": "日",
+                                  "currency": "JPY"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "technologies": {
+                      "frontend": {
+                        "frameworks": [
+                          "React",
+                          "Vue.js"
+                        ],
+                        "languages": [
+                          "TypeScript",
+                          "JavaScript"
+                        ],
+                        "libraries": [
+                          "D3.js",
+                          "Three.js",
+                          "Lodash"
+                        ]
+                      },
+                      "backend": {
+                        "frameworks": [
+                          "FastAPI",
+                          "Django"
+                        ],
+                        "languages": [
+                          "Python",
+                          "Go"
+                        ],
+                        "databases": {
+                          "primary": {
+                            "type": "PostgreSQL",
+                            "version": "14.5",
+                            "sharding": {
+                              "enabled": true,
+                              "strategy": "ハッシュベース",
+                              "shards": 4
+                            }
+                          },
+                          "cache": {
+                            "type": "Redis",
+                            "version": "6.2",
+                            "configuration": {
+                              "clusterMode": true,
+                              "persistenceMode": "RDB",
+                              "maxMemory": "16GB"
+                            }
+                          }
+                        },
+                        "messaging": {
+                          "broker": "Kafka",
+                          "topics": [
+                            {
+                              "name": "data-ingestion",
+                              "partitions": 8,
+                              "replicationFactor": 3,
+                              "retentionPeriod": "7d"
+                            },
+                            {
+                              "name": "user-events",
+                              "partitions": 16,
+                              "replicationFactor": 3,
+                              "retentionPeriod": "30d"
+                            }
+                          ]
+                        }
+                      },
+                      "infrastructure": {
+                        "cloud": {
+                          "provider": "AWS",
+                          "region": "ap-northeast-1",
+                          "services": {
+                            "compute": [
+                              "EC2",
+                              "Lambda",
+                              "Fargate"
+                            ],
+                            "storage": [
+                              "S3",
+                              "EBS",
+                              "Glacier"
+                            ],
+                            "networking": {
+                              "vpc": {
+                                "cidr": "10.0.0.0/16",
+                                "subnets": [
+                                  {
+                                    "type": "public",
+                                    "cidr": "10.0.1.0/24",
+                                    "az": "ap-northeast-1a"
+                                  },
+                                  {
+                                    "type": "private",
+                                    "cidr": "10.0.2.0/24",
+                                    "az": "ap-northeast-1a"
+                                  },
+                                  {
+                                    "type": "public",
+                                    "cidr": "10.0.3.0/24",
+                                    "az": "ap-northeast-1c"
+                                  },
+                                  {
+                                    "type": "private",
+                                    "cidr": "10.0.4.0/24",
+                                    "az": "ap-northeast-1c"
+                                  }
+                                ]
+                              },
+                              "loadBalancing": {
+                                "type": "ALB",
+                                "sslPolicy": "ELBSecurityPolicy-TLS-1-2-2017-01",
+                                "targetGroups": [
+                                  {
+                                    "name": "api-servers",
+                                    "healthCheck": {
+                                      "path": "/health",
+                                      "port": 8080,
+                                      "interval": 30,
+                                      "timeout": 5,
+                                      "healthyThreshold": 2,
+                                      "unhealthyThreshold": 3
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "deployment": {
+                          "containerization": {
+                            "platform": "Kubernetes",
+                            "orchestration": {
+                              "clusters": [
+                                {
+                                  "name": "production",
+                                  "version": "1.25.6",
+                                  "nodeGroups": [
+                                    {
+                                      "name": "core-services",
+                                      "instanceType": "c5.2xlarge",
+                                      "minSize": 3,
+                                      "maxSize": 10,
+                                      "desiredCapacity": 5
+                                    },
+                                    {
+                                      "name": "ml-workloads",
+                                      "instanceType": "g4dn.xlarge",
+                                      "minSize": 2,
+                                      "maxSize": 8,
+                                      "desiredCapacity": 4,
+                                      "labels": {
+                                        "workload": "ml",
+                                        "gpu": "nvidia"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "staging",
+                                  "version": "1.25.6",
+                                  "nodeGroups": [
+                                    {
+                                      "name": "general",
+                                      "instanceType": "c5.xlarge",
+                                      "minSize": 2,
+                                      "maxSize": 4,
+                                      "desiredCapacity": 2
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          },
+                          "cicd": {
+                            "repository": "GitHub",
+                            "pipelineStages": [
+                              {
+                                "name": "build",
+                                "steps": [
+                                  "lint",
+                                  "test",
+                                  "build"
+                                ]
+                              },
+                              {
+                                "name": "deploy-staging",
+                                "steps": [
+                                  "push-registry",
+                                  "update-manifest",
+                                  "apply-staging"
+                                ],
+                                "approvalRequired": false
+                              },
+                              {
+                                "name": "deploy-production",
+                                "steps": [
+                                  "push-registry",
+                                  "update-manifest",
+                                  "apply-production"
+                                ],
+                                "approvalRequired": true,
+                                "approvers": [
+                                  "emp-0042",
+                                  "emp-0087"
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "ml": {
+                        "frameworks": [
+                          "PyTorch",
+                          "TensorFlow"
+                        ],
+                        "deploymentStrategy": "サービングエンジン",
+                        "models": [
+                          {
+                            "name": "NLPエンジン",
+                            "type": "Transformer",
+                            "parameters": "1.2B",
+                            "trainingDataset": {
+                              "source": "社内+オープンソース",
+                              "size": "2TB",
+                              "preprocessing": [
+                                "トークン化",
+                                "正規化",
+                                "増強"
+                              ]
+                            },
+                            "performance": {
+                              "accuracy": 0.92,
+                              "f1Score": 0.88,
+                              "inferenceTime": "35ms"
+                            },
+                            "versions": [
+                              {
+                                "version": "1.0.0",
+                                "date": "2024-03-20",
+                                "changes": "初期リリース"
+                              },
+                              {
+                                "version": "1.1.0",
+                                "date": "2024-05-10",
+                                "changes": "精度向上とレイテンシ改善"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    "risks": [
+                      {
+                        "category": "技術的",
+                        "description": "新しいAIフレームワークの成熟度",
+                        "impact": "高",
+                        "probability": "中",
+                        "mitigation": "代替フレームワークの評価を並行して実施",
+                        "owner": "emp-0092"
+                      },
+                      {
+                        "category": "スケジュール",
+                        "description": "外部依存のリソース調達遅延",
+                        "impact": "中",
+                        "probability": "高",
+                        "mitigation": "早期調達とバックアッププランの準備",
+                        "owner": "emp-0087"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "マーケティング",
+                "floor": 10,
+                "employees": 45,
+                "campaigns": [
+                  {
+                    "id": "camp-2024-01",
+                    "name": "2024年夏季プロモーション",
+                    "budget": 800000,
+                    "channels": [
+                      {
+                        "name": "ソーシャルメディア",
+                        "platforms": [
+                          {
+                            "name": "Instagram",
+                            "content": {
+                              "posts": 15,
+                              "stories": 30,
+                              "reels": 5
+                            },
+                            "target": {
+                              "demographics": {
+                                "ageRange": "18-35",
+                                "interests": [
+                                  "テクノロジー",
+                                  "イノベーション",
+                                  "デジタルライフスタイル"
+                                ]
+                              }
+                            },
+                            "kpis": {
+                              "impressions": 500000,
+                              "engagement": 25000,
+                              "clicks": 10000
+                            }
+                          },
+                          {
+                            "name": "LinkedIn",
+                            "content": {
+                              "posts": 8,
+                              "articles": 3
+                            },
+                            "target": {
+                              "demographics": {
+                                "professionals": true,
+                                "industries": [
+                                  "IT",
+                                  "ファイナンス",
+                                  "製造業"
+                                ],
+                                "jobTitles": [
+                                  "CTO",
+                                  "CIO",
+                                  "テクニカルディレクター"
+                                ]
+                              }
+                            },
+                            "kpis": {
+                              "impressions": 200000,
+                              "engagement": 12000,
+                              "leads": 500
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "name": "デジタル広告",
+                        "platforms": [
+                          {
+                            "name": "Google Ads",
+                            "budget": 300000,
+                            "campaigns": [
+                              {
+                                "name": "ブランド認知",
+                                "budget": 120000,
+                                "keywords": [
+                                  {
+                                    "term": "AIソリューション",
+                                    "bidAmount": 500,
+                                    "matchType": "フレーズ"
+                                  },
+                                  {
+                                    "term": "企業データ分析",
+                                    "bidAmount": 600,
+                                    "matchType": "完全"
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "リードジェネレーション",
+                                "budget": 180000,
+                                "adGroups": [
+                                  {
+                                    "name": "製品デモ",
+                                    "cta": "無料デモをリクエスト",
+                                    "landingPage": "/demo-request"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "researchCenter": {
+            "location": {
+              "street": "456 リサーチパーク",
+              "city": "つくば",
+              "region": "茨城",
+              "country": "日本",
+              "postalCode": "305-0031"
+            },
+            "facilities": {
+              "laboratories": [
+                {
+                  "name": "AIラボ",
+                  "area": 1200,
+                  "equipment": [
+                    {
+                      "name": "GPUクラスター",
+                      "model": "NVIDIA DGX A100",
+                      "quantity": 4,
+                      "specifications": {
+                        "processors": 8,
+                        "memory": "320GB",
+                        "performance": "5 petaFLOPS"
+                      },
+                      "maintenance": {
+                        "lastService": "2024-03-12",
+                        "nextScheduled": "2024-09-12",
+                        "serviceProvider": {
+                          "name": "テクノサポート株式会社",
+                          "contract": "TECH-SRV-2024-0087",
+                          "contactPerson": "佐々木雅人",
+                          "phone": "+81-29-876-5432"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "financials": {
+        "fiscalYear": 2023,
+        "revenue": {
+          "amount": 12500000000,
+          "currency": "JPY",
+          "breakdown": {
+            "byRegion": {
+              "japan": 7500000000,
+              "asiaPacific": 2500000000,
+              "northAmerica": 1500000000,
+              "europe": 1000000000
+            },
+            "byProduct": {
+              "aiSolutions": 5000000000,
+              "cloudServices": 3500000000,
+              "consulting": 2500000000,
+              "hardware": 1500000000
+            }
+          }
+        },
+        "expenses": {
+          "amount": 10000000000,
+          "currency": "JPY",
+          "breakdown": {
+            "rAndD": 3000000000,
+            "sales": 2500000000,
+            "operations": 2000000000,
+            "administration": 1500000000,
+            "marketing": 1000000000
+          }
+        },
+        "profitability": {
+          "grossProfit": 2500000000,
+          "grossMargin": 0.2,
+          "ebitda": 2000000000,
+          "netIncome": 1500000000,
+          "netMargin": 0.12
+        }
+      },
+      "products": [
+        {
+          "id": "PROD-AI-001",
+          "name": "SmartAnalytics",
+          "category": "AIソリューション",
+          "description": "企業データを分析して意思決定を支援するAIプラットフォーム",
+          "version": "3.2.1",
+          "pricing": {
+            "model": "サブスクリプション",
+            "tiers": [
+              {
+                "name": "スターター",
+                "priceMonthly": 200000,
+                "priceYearly": 2000000,
+                "features": {
+                  "dataProcessing": "最大100GB/月",
+                  "users": 10,
+                  "modelCustomization": false,
+                  "support": "標準（営業時間内）"
+                }
+              },
+              {
+                "name": "プロフェッショナル",
+                "priceMonthly": 500000,
+                "priceYearly": 5000000,
+                "features": {
+                  "dataProcessing": "最大500GB/月",
+                  "users": 25,
+                  "modelCustomization": true,
+                  "support": "優先（24時間対応）"
+                }
+              },
+              {
+                "name": "エンタープライズ",
+                "priceMonthly": "要問合せ",
+                "priceYearly": "要問合せ",
+                "features": {
+                  "dataProcessing": "無制限",
+                  "users": "無制限",
+                  "modelCustomization": true,
+                  "support": "専任（24時間対応）",
+                  "dedicatedInfrastructure": true
+                }
+              }
+            ]
+          },
+          "clients": [
+            {
+              "id": "CLT-0123",
+              "name": "大手金融グループ",
+              "industry": "金融",
+              "subscription": {
+                "tier": "エンタープライズ",
+                "startDate": "2023-10-01",
+                "renewalDate": "2024-09-30",
+                "customTerms": {
+                  "sla": {
+                    "availability": 99.99,
+                    "responseTime": {
+                      "critical": "15分以内",
+                      "high": "1時間以内",
+                      "medium": "4時間以内",
+                      "low": "1営業日以内"
+                    }
+                  }
+                }
+              },
+              "deployments": [
+                {
+                  "environment": "本番",
+                  "region": "東京",
+                  "instances": 5,
+                  "users": 1200,
+                  "dataVolume": {
+                    "daily": "2TB",
+                    "monthly": "60TB"
+                  },
+                  "performance": {
+                    "averageResponseTime": "120ms",
+                    "p95ResponseTime": "350ms",
+                    "uptime": 99.996
+                  },
+                  "customizations": [
+                    {
+                      "name": "規制対応レポート",
+                      "description": "金融規制に準拠したレポート生成機能",
+                      "implementationDate": "2024-01-15"
+                    },
+                    {
+                      "name": "不正検知拡張",
+                      "description": "取引不正検知のための追加モデル",
+                      "implementationDate": "2024-03-22"
+                    }
+                  ]
+                },
+                {
+                  "environment": "検証",
+                  "region": "大阪",
+                  "instances": 2,
+                  "users": 50,
+                  "dataVolume": {
+                    "daily": "200GB",
+                    "monthly": "6TB"
+                  }
+                }
+              ],
+              "supportHistory": [
+                {
+                  "ticketId": "TKT-2024-0567",
+                  "date": "2024-02-03",
+                  "issue": "大量データインポート時のパフォーマンス低下",
+                  "severity": "高",
+                  "resolution": {
+                    "description": "バッチ処理ロジックの最適化とインデックス追加",
+                    "implementedDate": "2024-02-05",
+                    "resolvedBy": "サポートエンジニアチーム"
+                  }
+                }
+              ]
+            }
+          ],
+          "roadmap": {
+            "currentQuarter": {
+              "features": [
+                {
+                  "name": "高度な時系列分析",
+                  "description": "季節性と異常検出を強化した時系列分析機能",
+                  "targetReleaseDate": "2024-06-30",
+                  "status": "開発中"
+                }
+              ],
+              "bugFixes": [
+                {
+                  "id": "BUG-0921",
+                  "description": "大規模データセットでのメモリリーク",
+                  "severity": "高",
+                  "targetReleaseDate": "2024-05-15"
+                }
+              ]
+            },
+            "nextQuarter": {
+              "features": [
+                {
+                  "name": "マルチモーダル分析",
+                  "description": "テキスト、画像、音声データの統合分析能力",
+                  "targetReleaseDate": "2024-09-15",
+                  "status": "計画中"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "partnerships": [
+        {
+          "partner": {
+            "name": "テックイノベーション株式会社",
+            "type": "テクノロジーパートナー",
+            "website": "https://techinnovation.example.jp",
+            "contact": {
+              "name": "伊藤誠",
+              "position": "アライアンスマネージャー",
+              "email": "m.ito@techinnovation.example.jp",
+              "phone": "+81-3-9876-5432"
+            }
+          },
+          "agreement": {
+            "startDate": "2023-07-01",
+            "endDate": "2026-06-30",
+            "renewalTerms": "自動更新（3年間）",
+            "terminationClause": "90日前の書面通知",
+            "documents": {
+              "mainAgreement": "PRTNR-TECH-2023-0015",
+              "nda": "NDA-TECH-2023-0015",
+              "technicalAddendum": "TECH-ADDM-2023-0015"
+            }
+          },
+          "scope": {
+            "products": [
+              "SmartAnalytics",
+              "CloudPlatform"
+            ],
+            "territories": [
+              "日本",
+              "アジア太平洋"
+            ],
+            "activities": {
+              "jointDevelopment": true,
+              "marketing": true,
+              "sales": true,
+              "support": false
+            }
+          },
+          "royalties": {
+            "structure": "売上の10%",
+            "minimumGuarantee": {
+              "year1": 5000000,
+              "year2": 10000000,
+              "year3": 15000000
+            },
+            "paymentTerms": "四半期ごと（四半期終了後30日以内）"
+          },
+          "projects": [
+            {
+              "name": "エッジAI統合",
+              "description": "SmartAnalyticsとエッジデバイスの統合プロジェクト",
+              "startDate": "2023-09-01",
+              "status": "進行中",
+              "milestones": [
+                {
+                  "name": "要件定義",
+                  "date": "2023-10-15",
+                  "completed": true
+                },
+                {
+                  "name": "プロトタイプ開発",
+                  "date": "2024-01-31",
+                  "completed": true
+                },
+                {
+                  "name": "フィールドテスト",
+                  "date": "2024-05-30",
+                  "completed": false
+                },
+                {
+                  "name": "製品リリース",
+                  "date": "2024-08-15",
+                  "completed": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

@@ -31,6 +31,9 @@ from logging_config import get_logger
 # 翻訳システムをインポート
 from translation import t
 
+# JSON平坦化モジュールをインポート
+from flatten_json import try_flatten_json
+
 # ロガーの取得
 logger = get_logger(__name__)
 
@@ -745,11 +748,11 @@ class DataManager:
     
     def _build_flat_data_structure(self, raw_data: List[Dict]) -> bool:
         """
-        IDベースの階層構造ではないデータを平坦な構造として構築する
-        complex_nested_structure.jsonのような単一オブジェクトや非階層データ用
+        IDベースの階層構造ではないデータを平坦な構造として構築する.
 
+        complex_nested_structure.jsonのような単一オブジェクトや非階層データ用。
         flatten_json.pyの平坦化機能を使用して、深くネストされた構造を
-        検索可能な形式に変換する
+        検索可能な形式に変換する。
 
         Args:
             raw_data: 処理対象のraw_data
@@ -757,6 +760,11 @@ class DataManager:
         Returns:
             構築が成功した場合はTrue
         """
+        # 定数定義
+        DEFAULT_ID_KEY = "id"
+        DEFAULT_CHILDREN_KEY = "children"
+        LABEL_CANDIDATES = ["name", "title", "label", "description", "id"]
+
         try:
             logger.debug("Building flat structure for non-hierarchical data...")
 
@@ -764,9 +772,6 @@ class DataManager:
             self.app_state["data_map"] = {}
             self.app_state["children_map"] = {}
             self.app_state["root_ids"] = []
-
-            # flatten_json モジュールを使用して深くネストされた構造を平坦化
-            from flatten_json import try_flatten_json
 
             # raw_dataがリストの場合、各アイテムを処理
             # raw_dataが単一オブジェクトの場合、そのまま平坦化
@@ -780,28 +785,33 @@ class DataManager:
             if was_flattened and flattened_data:
                 logger.debug(f"Data was flattened: {len(flattened_data)} nodes extracted")
 
-                # 平坦化されたデータを処理
-                id_key = "id"  # 平坦化後のIDキー
-                children_key = "children"  # 平坦化後の子要素キー
-
                 # 平坦化されたデータからdata_mapとchildren_mapを構築
-                all_child_ids = set()
+                all_child_ids: Set[str] = set()
+                auto_id_counter = 0  # 安定したカウンター
 
                 for item in flattened_data:
                     if isinstance(item, dict):
-                        # IDを取得（既存のIDまたはパスベースのID）
-                        item_id = str(item.get(id_key, item.get("_path", f"auto_{len(self.app_state['data_map'])}")))
+                        # IDを取得(既存のIDまたはパスベースのID)
+                        item_id = item.get(DEFAULT_ID_KEY) or item.get("_path")
+                        if not item_id:
+                            # 自動生成IDが衝突しないようにチェック
+                            while f"auto_{auto_id_counter}" in self.app_state["data_map"]:
+                                auto_id_counter += 1
+                            item_id = f"auto_{auto_id_counter}"
+                            auto_id_counter += 1
+                        item_id = str(item_id)
 
                         # data_mapに追加
                         self.app_state["data_map"][item_id] = item.copy()
 
                         # children_mapの構築
-                        if children_key in item and isinstance(item[children_key], list):
-                            child_ids = [str(c_id) for c_id in item[children_key] if c_id is not None]
+                        children = item.get(DEFAULT_CHILDREN_KEY)
+                        if isinstance(children, list):
+                            child_ids = [str(c_id) for c_id in children if c_id is not None]
                             self.app_state["children_map"][item_id] = child_ids
                             all_child_ids.update(child_ids)
 
-                # ルートノードの特定（子ノードとして参照されていないノード）
+                # ルートノードの特定(子ノードとして参照されていないノード)
                 all_ids = set(self.app_state["data_map"].keys())
                 self.app_state["root_ids"] = list(all_ids - all_child_ids)
 
@@ -811,15 +821,14 @@ class DataManager:
                     self.app_state["root_ids"] = [first_id]
 
                 # キー設定を更新
-                self.app_state["id_key"] = id_key
-                self.app_state["children_key"] = children_key
+                self.app_state["id_key"] = DEFAULT_ID_KEY
+                self.app_state["children_key"] = DEFAULT_CHILDREN_KEY
 
-                # ラベルキーの推定（name, title, labelなど）
-                label_candidates = ["name", "title", "label", "description", "id"]
-                label_key = id_key  # デフォルト
+                # ラベルキーの推定
+                label_key = DEFAULT_ID_KEY  # デフォルト
                 if self.app_state["data_map"]:
                     first_item = next(iter(self.app_state["data_map"].values()))
-                    for candidate in label_candidates:
+                    for candidate in LABEL_CANDIDATES:
                         if candidate in first_item:
                             label_key = candidate
                             break
@@ -828,15 +837,21 @@ class DataManager:
                 # raw_dataを平坦化後のデータで更新
                 self.app_state["raw_data"] = flattened_data
 
-                logger.info(f"Flat structure built with flattening: {len(self.app_state['data_map'])} items, {len(self.app_state['root_ids'])} roots")
+                logger.info(
+                    f"Flat structure built with flattening: "
+                    f"{len(self.app_state['data_map'])} items, "
+                    f"{len(self.app_state['root_ids'])} roots"
+                )
             else:
                 # 平坦化されなかった場合は従来の方法でフォールバック
                 logger.debug("Data was not flattened, using fallback method")
 
                 for i, item in enumerate(raw_data):
                     if isinstance(item, dict):
-                        # 仮想IDを生成
+                        # 仮想IDを生成(衝突チェック付き)
                         virtual_id = f"item_{i}"
+                        while virtual_id in self.app_state["data_map"]:
+                            virtual_id = f"item_{i}_{uuid.uuid4().hex[:8]}"
 
                         # data_mapに追加
                         self.app_state["data_map"][virtual_id] = item.copy()
@@ -860,10 +875,12 @@ class DataManager:
             self._set_loading_state(False)
             return True
 
+        except (KeyError, TypeError, ValueError) as e:
+            logger.exception(f"Data structure error in flat structure building: {e}")
+            self._set_loading_state(False)
+            return False
         except Exception as e:
-            logger.error(f"Error building flat structure: {e}")
-            import traceback
-            logger.debug(traceback.format_exc())
+            logger.exception(f"Unexpected error building flat structure: {e}")
             self._set_loading_state(False)
             return False
     

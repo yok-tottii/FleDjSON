@@ -875,12 +875,12 @@ class DataManager:
             self._set_loading_state(False)
             return True
 
-        except (KeyError, TypeError, ValueError) as e:
-            logger.exception(f"Data structure error in flat structure building: {e}")
+        except (KeyError, TypeError, ValueError):
+            logger.exception("Data structure error in flat structure building")
             self._set_loading_state(False)
             return False
-        except Exception as e:
-            logger.exception(f"Unexpected error building flat structure: {e}")
+        except Exception:
+            logger.exception("Unexpected error building flat structure")
             self._set_loading_state(False)
             return False
     

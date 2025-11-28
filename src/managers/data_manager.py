@@ -747,51 +747,123 @@ class DataManager:
         """
         IDベースの階層構造ではないデータを平坦な構造として構築する
         complex_nested_structure.jsonのような単一オブジェクトや非階層データ用
-        
+
+        flatten_json.pyの平坦化機能を使用して、深くネストされた構造を
+        検索可能な形式に変換する
+
         Args:
             raw_data: 処理対象のraw_data
-            
+
         Returns:
             構築が成功した場合はTrue
         """
         try:
             logger.debug("Building flat structure for non-hierarchical data...")
-            
+
             # データマップとツリー構造をクリア
             self.app_state["data_map"] = {}
             self.app_state["children_map"] = {}
             self.app_state["root_ids"] = []
-            
-            # 各データアイテムに仮想IDを割り当て
-            for i, item in enumerate(raw_data):
-                if isinstance(item, dict):
-                    # 仮想IDを生成（"item_0", "item_1"など）
-                    virtual_id = f"item_{i}"
-                    
-                    # data_mapに追加
-                    self.app_state["data_map"][virtual_id] = item.copy()
-                    
-                    # ルートノードとして扱う
-                    self.app_state["root_ids"].append(virtual_id)
-                    
-                    logger.debug(f"Added flat item: {virtual_id}")
-            
-            # 仮想的なキー設定を更新
-            self.app_state["id_key"] = "virtual_id"  # 仮想ID
-            self.app_state["label_key"] = "virtual_id"  # ラベルも仮想ID
-            self.app_state["children_key"] = None  # 子ノードなし
-            
-            logger.info(f"Flat structure built: {len(self.app_state['data_map'])} items")
-            
+
+            # flatten_json モジュールを使用して深くネストされた構造を平坦化
+            from flatten_json import try_flatten_json
+
+            # raw_dataがリストの場合、各アイテムを処理
+            # raw_dataが単一オブジェクトの場合、そのまま平坦化
+            if isinstance(raw_data, list) and len(raw_data) == 1:
+                # 単一オブジェクトのリストの場合、中身を取り出して平坦化
+                flattened_data, was_flattened = try_flatten_json(raw_data[0])
+            else:
+                # 複数アイテムまたは辞書の場合
+                flattened_data, was_flattened = try_flatten_json(raw_data)
+
+            if was_flattened and flattened_data:
+                logger.debug(f"Data was flattened: {len(flattened_data)} nodes extracted")
+
+                # 平坦化されたデータを処理
+                id_key = "id"  # 平坦化後のIDキー
+                children_key = "children"  # 平坦化後の子要素キー
+
+                # 平坦化されたデータからdata_mapとchildren_mapを構築
+                all_child_ids = set()
+
+                for item in flattened_data:
+                    if isinstance(item, dict):
+                        # IDを取得（既存のIDまたはパスベースのID）
+                        item_id = str(item.get(id_key, item.get("_path", f"auto_{len(self.app_state['data_map'])}")))
+
+                        # data_mapに追加
+                        self.app_state["data_map"][item_id] = item.copy()
+
+                        # children_mapの構築
+                        if children_key in item and isinstance(item[children_key], list):
+                            child_ids = [str(c_id) for c_id in item[children_key] if c_id is not None]
+                            self.app_state["children_map"][item_id] = child_ids
+                            all_child_ids.update(child_ids)
+
+                # ルートノードの特定（子ノードとして参照されていないノード）
+                all_ids = set(self.app_state["data_map"].keys())
+                self.app_state["root_ids"] = list(all_ids - all_child_ids)
+
+                # ルートノードがない場合は最初のノードをルートとする
+                if not self.app_state["root_ids"] and self.app_state["data_map"]:
+                    first_id = next(iter(self.app_state["data_map"].keys()))
+                    self.app_state["root_ids"] = [first_id]
+
+                # キー設定を更新
+                self.app_state["id_key"] = id_key
+                self.app_state["children_key"] = children_key
+
+                # ラベルキーの推定（name, title, labelなど）
+                label_candidates = ["name", "title", "label", "description", "id"]
+                label_key = id_key  # デフォルト
+                if self.app_state["data_map"]:
+                    first_item = next(iter(self.app_state["data_map"].values()))
+                    for candidate in label_candidates:
+                        if candidate in first_item:
+                            label_key = candidate
+                            break
+                self.app_state["label_key"] = label_key
+
+                # raw_dataを平坦化後のデータで更新
+                self.app_state["raw_data"] = flattened_data
+
+                logger.info(f"Flat structure built with flattening: {len(self.app_state['data_map'])} items, {len(self.app_state['root_ids'])} roots")
+            else:
+                # 平坦化されなかった場合は従来の方法でフォールバック
+                logger.debug("Data was not flattened, using fallback method")
+
+                for i, item in enumerate(raw_data):
+                    if isinstance(item, dict):
+                        # 仮想IDを生成
+                        virtual_id = f"item_{i}"
+
+                        # data_mapに追加
+                        self.app_state["data_map"][virtual_id] = item.copy()
+
+                        # ルートノードとして扱う
+                        self.app_state["root_ids"].append(virtual_id)
+
+                        logger.debug(f"Added flat item: {virtual_id}")
+
+                # 仮想的なキー設定を更新
+                self.app_state["id_key"] = "virtual_id"
+                self.app_state["label_key"] = "virtual_id"
+                self.app_state["children_key"] = None
+
+                logger.info(f"Flat structure built (fallback): {len(self.app_state['data_map'])} items")
+
             # 解析結果表示を更新
             if self.app_state.get("analysis_results"):
                 self._update_analysis_result_display(self.app_state["analysis_results"])
-            
+
             self._set_loading_state(False)
             return True
-            
+
         except Exception as e:
             logger.error(f"Error building flat structure: {e}")
+            import traceback
+            logger.debug(traceback.format_exc())
             self._set_loading_state(False)
             return False
     

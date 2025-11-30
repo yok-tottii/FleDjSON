@@ -504,13 +504,13 @@ class SearchManager(EventAwareManager):
         # マネージャー参照を更新
         self._update_manager_references()
         
-        # ノード選択を実行（複数の方法を試行）
+        # ノード選択を実行(複数の方法を試行)
         selection_success = False
-        
-        # 方法1: UIStateManagerを使用
+
+        # 方法1: UIStateManagerを使用(bypass_lock=Trueで移動モードでも選択可能に)
         if self.ui_state_manager and hasattr(self.ui_state_manager, "select_node"):
             try:
-                self.ui_state_manager.select_node(selected_node_id)
+                self.ui_state_manager.select_node(selected_node_id, bypass_lock=True)
                 selection_success = True
                 print(f"[OK] UIStateManagerでノード {selected_node_id} を選択しました")
             except Exception as e:

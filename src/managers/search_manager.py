@@ -663,7 +663,7 @@ class SearchManager(EventAwareManager):
                 self.ui_state_manager.select_node(selected_node_id, bypass_lock=True)
                 selection_success = True
                 print(f"[OK] UIStateManagerでノード {selected_node_id} を選択しました")
-            except Exception as e:
+            except (AttributeError, RuntimeError, ValueError, KeyError) as e:
                 print(f"[WARNING] UIStateManagerでの選択に失敗: {e}")
 
         # 方法2: UIManagerを使用
@@ -674,7 +674,7 @@ class SearchManager(EventAwareManager):
                     ui_manager.on_tree_node_select(selected_node_id)
                     selection_success = True
                     print(f"[OK] UIManagerでノード {selected_node_id} を選択しました")
-                except Exception as e:
+                except (AttributeError, RuntimeError, ValueError, KeyError) as e:
                     print(f"[WARNING] UIManagerでの選択に失敗: {e}")
 
         # 方法3: 直接的なapp_state操作
@@ -693,7 +693,7 @@ class SearchManager(EventAwareManager):
                 else:
                     print("[WARNING] FormManagerが見つかりません")
 
-            except Exception as e:
+            except (AttributeError, RuntimeError, ValueError, KeyError) as e:
                 print(f"[WARNING] 直接選択に失敗: {e}")
 
         if not selection_success:
@@ -986,66 +986,61 @@ class SearchManager(EventAwareManager):
             
             # 更新対象のノードを再インデックス化
             added_items = []
+
+            # ループ外に関数を定義（B023警告回避）
+            def extract_searchable_text(obj, prefix, fields_list):
+                """オブジェクトから検索可能なテキストを再帰的に抽出"""
+                if isinstance(obj, dict):
+                    # 辞書全体を文字列として追加(JSON構造全体で検索できるように)
+                    dict_str = str(obj)
+                    if dict_str and dict_str.strip():
+                        fields_list.append(dict_str)
+
+                    for k, v in obj.items():
+                        # キー名も検索対象に追加
+                        if isinstance(k, str):
+                            fields_list.append(k)
+                        # 値を再帰的に処理
+                        extract_searchable_text(v, f"{prefix}.{k}" if prefix else k, fields_list)
+                elif isinstance(obj, list):
+                    # リスト全体を文字列として追加(重要)
+                    list_str = str(obj)
+                    if list_str and list_str.strip():
+                        fields_list.append(list_str)
+
+                    # リストの各要素も個別に追加
+                    for i, item in enumerate(obj):
+                        # 各要素を文字列化して直接追加(プリミティブ値)
+                        item_str = str(item)
+                        if item_str and item_str.strip():
+                            fields_list.append(item_str)
+                        # 複雑な型は再帰的に処理
+                        if isinstance(item, (dict, list)):
+                            extract_searchable_text(item, f"{prefix}[{i}]", fields_list)
+                elif isinstance(obj, (str, int, float, bool)):
+                    # プリミティブ値は文字列に変換して追加
+                    obj_str = str(obj)
+                    if obj_str and obj_str.strip():  # 空でない場合のみ追加
+                        fields_list.append(obj_str)
+
             for update_id in updated_nodes:
                 node_data = self.app_state["data_map"].get(update_id)
                 if not node_data or not isinstance(node_data, dict):
                     continue
-                
+
                 # 検索対象テキストの構築
                 id_key = self.app_state.get("id_key", "id")
                 label_key = self.app_state.get("label_key", "name")
-                
+
                 # ノードの文字列表現を取得
                 node_id = str(update_id)
                 node_text = ""
-                
+
                 if label_key in node_data:
                     node_text = str(node_data.get(label_key, ""))
-                
+
                 # 検索対象に追加するフィールド(キーと値の両方)
                 extra_fields = []
-                
-                # すべてのフィールドを抽出
-                def extract_searchable_text(obj, prefix=""):
-                    """オブジェクトから検索可能なテキストを再帰的に抽出"""
-                    if isinstance(obj, dict):
-                        # 辞書全体を文字列として追加(JSON構造全体で検索できるように)
-                        dict_str = str(obj)
-                        if dict_str and dict_str.strip():
-                            extra_fields.append(dict_str)
-                            
-                        for k, v in obj.items():
-                            # キー名も検索対象に追加
-                            if isinstance(k, str):
-                                extra_fields.append(k)
-                            # 値を再帰的に処理
-                            extract_searchable_text(v, f"{prefix}.{k}" if prefix else k)
-                    elif isinstance(obj, list):
-                        # リスト全体を文字列として追加(重要)
-                        list_str = str(obj)
-                        if list_str and list_str.strip():
-                            extra_fields.append(list_str)
-                        
-                        # リストの各要素も個別に追加
-                        for i, item in enumerate(obj):
-                            # 各要素を文字列化して直接追加(プリミティブ値)
-                            item_str = str(item)
-                            if item_str and item_str.strip():
-                                extra_fields.append(item_str)
-                                # 特別に対象とするキーワード('a', 'b', 'ccc'など問題が報告されているキーワード)を追加
-                                if item_str in ['a', 'b', 'ccc']:
-                                    print(f"  特別処理: リスト要素のキーワード '{item_str}' を検索テキストに追加")
-                            # 複雑な型は再帰的に処理
-                            if isinstance(item, (dict, list)):
-                                extract_searchable_text(item, f"{prefix}[{i}]")
-                    elif isinstance(obj, (str, int, float, bool)):
-                        # プリミティブ値は文字列に変換して追加
-                        obj_str = str(obj)
-                        if obj_str and obj_str.strip():  # 空でない場合のみ追加
-                            extra_fields.append(obj_str)
-                            # 特別に対象とするキーワード('a', 'b', 'ccc'など問題が報告されているキーワード)を追加
-                            if obj_str in ['a', 'b', 'ccc']:
-                                print(f"  特別処理: プリミティブ値のキーワード '{obj_str}' を検索テキストに追加")
                 
                 # すべてのフィールドを抽出
                 for key, value in node_data.items():
@@ -1067,7 +1062,7 @@ class SearchManager(EventAwareManager):
                                         print(f"    抽出: '{key}'の要素「{item_str}」を検索テキストに追加")
                         
                         # 通常の再帰処理
-                        extract_searchable_text(value, key)
+                        extract_searchable_text(value, key, extra_fields)
                         extra_fields.append(key)
                 
                 # 追加の抽出テキストを加える

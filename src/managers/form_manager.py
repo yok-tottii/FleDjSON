@@ -585,10 +585,8 @@ class FormManager(EventAwareManager):
         if not highlight_paths:
             return
 
-        # 最初のハイライトパスを取得
-        first_highlight_path = highlight_paths[0] if highlight_paths else None
-        if not first_highlight_path:
-            return
+        # 最初のハイライトパスを取得（空チェックは上で済み）
+        first_highlight_path = highlight_paths[0]
 
         # detail_form_columnを取得
         detail_form_column = self.ui_controls.get("detail_form_column")

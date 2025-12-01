@@ -375,7 +375,9 @@ class SearchManager(EventAwareManager):
         # 検索結果がある場合は最初の結果を選択
         if self.search_results:
             self.select_search_result(0)
-            print(f"  選択された結果: ID={self.search_results[0]['id']}")
+            # select_search_result後も結果が存在するか確認してからアクセス
+            if self.search_results:
+                print(f"  選択された結果: ID={self.search_results[0]['id']}")
         else:
             print(f"[WARNING] 検索語 '{self.search_term}' に一致する結果が見つかりませんでした")
             # 結果が見つからない場合でも、UIを更新する必要がある

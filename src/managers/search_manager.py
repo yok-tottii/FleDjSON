@@ -62,28 +62,23 @@ class SearchManager(EventAwareManager):
         self.search_field = None
         self.search_nav = None
         self.no_results_message = None
-        
-        # 他のマネージャーへの参照(遅延読み込み)
-        self.ui_state_manager = None
-        self.ui_manager = None
-        self.form_manager = None
-        
+
         # 検索結果のカウンター表示
         self.result_counter = None
-        
+
         # 検索ナビゲーションボタン
         self.prev_button = None
         self.next_button = None
-        
+
         # 検索結果クリアボタン
         self.clear_button = None
-        
-        # 他のマネージャーへの参照(初期化後に設定される)
+
+        # 他のマネージャーへの参照(遅延読み込み、初期化後に設定される)
         self.ui_state_manager = None
         self.data_manager = None
         self.ui_manager = None
         self.form_manager = None
-        
+
         # app_stateから既存のマネージャーがあれば取得
         self._load_managers_from_app_state()
         
@@ -413,18 +408,24 @@ class SearchManager(EventAwareManager):
         # 親パスを除外(子パスが存在する場合)
         # 例: ["organization.name", "organization"] → ["organization.name"]
         # セットベースの最適化: O(n)でプレフィックスセットを構築
-        path_set = set(matched_paths)
         parent_prefixes = set()
         for path in matched_paths:
             # このパスの全ての親プレフィックスを追加
-            parts = path.replace('[', '.').split('.')
+            # パスを正規化: tags[0].name → tags.0.name
+            normalized = path.replace('[', '.').replace(']', '')
+            parts = normalized.split('.')
             for i in range(1, len(parts)):
-                prefix = '.'.join(parts[:i])
-                # 元のパス形式に戻す(配列インデックス用)
-                parent_prefixes.add(prefix)
+                # 正規化されたプレフィックスを追加
+                parent_prefixes.add('.'.join(parts[:i]))
 
-        # 親プレフィックスに含まれないパスのみを残す
-        filtered_paths = [path for path in matched_paths if path not in parent_prefixes]
+        # 親プレフィックスに含まれないパスのみを残す(正規化して比較)
+        def normalize_path(p):
+            return p.replace('[', '.').replace(']', '')
+
+        filtered_paths = [
+            path for path in matched_paths
+            if normalize_path(path) not in parent_prefixes
+        ]
 
         return filtered_paths
 

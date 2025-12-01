@@ -736,6 +736,7 @@ class FormManager(EventAwareManager):
                             border=ft.border.all(highlight_style.get("border_width", 2),
                                                 highlight_style.get("border_color", Colors.AMBER)),
                             border_radius=5,
+                            key=f"field_{current_key_path}",  # スクロール用のキー属性
                             data={"path": current_key_path, "highlighted": True}
                         )
                     else:
@@ -748,6 +749,7 @@ class FormManager(EventAwareManager):
                         min_lines=3,
                         max_lines=10,
                         dense=True,
+                        key=f"field_{current_key_path}",  # スクロール用のキー属性
                         data={"path": current_key_path, "type": "dict"},
                         on_change=self.on_form_field_change,
                         hint_text=t("form.dict_json_hint"),
@@ -874,6 +876,7 @@ class FormManager(EventAwareManager):
                             border=ft.border.all(highlight_style.get("border_width", 2),
                                                 highlight_style.get("border_color", Colors.AMBER)),
                             border_radius=5,
+                            key=f"field_{current_key_path}",  # スクロール用のキー属性
                             data={"path": current_key_path, "highlighted": True}
                         )
                     else:
@@ -886,6 +889,7 @@ class FormManager(EventAwareManager):
                         min_lines=3,
                         max_lines=10,
                         dense=True,
+                        key=f"field_{current_key_path}",  # スクロール用のキー属性
                         data=current_key_path,
                         on_change=self.on_form_field_change,
                         hint_text=t("form.list_json_hint"),
@@ -918,6 +922,7 @@ class FormManager(EventAwareManager):
                                             highlight_style.get("border_color", Colors.AMBER)),
                         border_radius=5,
                         padding=5,
+                        key=f"field_{current_key_path}",  # スクロール用のキー属性
                         data={"path": current_key_path, "highlighted": True}
                     )
                 else:
@@ -929,6 +934,7 @@ class FormManager(EventAwareManager):
                     label=key,
                     value=str(value),
                     keyboard_type=ft.KeyboardType.NUMBER,
+                    key=f"field_{current_key_path}",  # スクロール用のキー属性
                     data={"path": current_key_path, "is_id": is_id_field, "highlighted": is_highlighted},
                     dense=True,
                     hint_text=t("form.id_field_hint") if is_id_field else None,
@@ -946,6 +952,7 @@ class FormManager(EventAwareManager):
                     min_lines=1,
                     max_lines=5 if isinstance(value, str) and (len(value) > 60 or '\n' in value) else 1,
                     dense=True,
+                    key=f"field_{current_key_path}",  # スクロール用のキー属性
                     data={"path": current_key_path, "is_id": is_id_field, "highlighted": is_highlighted},
                     hint_text=t("form.id_field_hint") if is_id_field else None,
                     on_change=self.on_id_field_change if is_id_field else self.on_form_field_change,

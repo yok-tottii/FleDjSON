@@ -149,7 +149,11 @@ class SearchManager(EventAwareManager):
             return
         
         # 検索インデックスの構築
-        def index_node(node: Dict[str, Any], path: str, override_node_id: str = None) -> None:
+        def index_node(
+            node: Dict[str, Any],
+            path: str,
+            override_node_id: Optional[str] = None,
+        ) -> None:
             """ノードとその子ノードを検索インデックスに追加
 
             Args:
@@ -168,8 +172,8 @@ class SearchManager(EventAwareManager):
                 return
 
             # ノードIDを取得(override_node_idが指定されていればそれを優先)
-            if override_node_id:
-                node_id = override_node_id
+            if override_node_id is not None:
+                node_id = str(override_node_id)
             else:
                 node_id = str(node.get(id_key, "")) or str(node.get("_path", ""))
 
@@ -391,8 +395,11 @@ class SearchManager(EventAwareManager):
         if self.search_results:
             self.select_search_result(0)
             # select_search_result後も結果が存在するか確認してからアクセス
-            if self.search_results:
-                print(f"  選択された結果: ID={self.search_results[0]['id']}")
+            if self.search_results and 0 <= self.current_search_index < len(self.search_results):
+                print(
+                    f"  選択された結果: index={self.current_search_index}, "
+                    f"ID={self.search_results[self.current_search_index]['id']}"
+                )
         else:
             print(f"[WARNING] 検索語 '{self.search_term}' に一致する結果が見つかりませんでした")
             # 結果が見つからない場合でも、UIを更新する必要がある

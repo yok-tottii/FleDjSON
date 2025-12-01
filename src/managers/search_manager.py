@@ -444,8 +444,8 @@ class SearchManager(EventAwareManager):
         # 検索語を小文字に変換
         search_term_lower = self.search_term.lower()
 
-        # 検索実行
-        self.search_results = []
+        # 検索実行（一時的な結果リスト）
+        temp_results = []
         for item in self.search_index:
             if search_term_lower in item["text"]:
                 # マッチしたフィールドパスを特定
@@ -459,8 +459,26 @@ class SearchManager(EventAwareManager):
                     "id": item["id"],
                     "matched_paths": matched_paths  # マッチしたフィールドパスのリスト
                 }
-                self.search_results.append(result_item)
+                temp_results.append(result_item)
                 print(f"  一致: ID={item['id']}, マッチフィールド={matched_paths[:3]}...")
+
+        # 親ノードを除外（子ノードがすでに結果に含まれる場合）
+        result_ids = [r["id"] for r in temp_results]
+        self.search_results = []
+        for result in temp_results:
+            node_id = result["id"]
+            # このノードIDが他の結果の親でないかチェック
+            is_parent = False
+            for other_id in result_ids:
+                if other_id != node_id and (
+                    other_id.startswith(node_id + ".") or
+                    other_id.startswith(node_id + "[")
+                ):
+                    is_parent = True
+                    print(f"  除外: {node_id} は {other_id} の親ノードのため")
+                    break
+            if not is_parent:
+                self.search_results.append(result)
 
         # 検索結果の処理
         self.current_search_index = -1  # 初期化

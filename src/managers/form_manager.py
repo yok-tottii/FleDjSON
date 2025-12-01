@@ -450,9 +450,12 @@ class FormManager(EventAwareManager):
         detail_form_column.controls = controls
         detail_form_column.update()
         print(f"[OK] Detail form column updated for node: {selected_node_id}")
-        
+
         # ボタンの状態を明示的に更新 (is_dirty に基づいて)
         self.update_detail_buttons_state()
+
+        # ハイライトされたフィールドへ自動スクロール
+        self._scroll_to_highlighted_field()
     
     def clear_detail_form(self):
         """詳細フォームの内容をクリアする"""
@@ -542,6 +545,110 @@ class FormManager(EventAwareManager):
             if self.app_state.get("selected_node_id"):
                 self.update_detail_form(self.app_state.get("selected_node_id"))
     
+    def _is_field_highlighted(self, field_path: str) -> bool:
+        """
+        フィールドがハイライト対象かどうかを判定する
+
+        Args:
+            field_path: フィールドのパス
+
+        Returns:
+            ハイライト対象の場合True
+        """
+        highlight_paths = self.app_state.get("highlight_field_paths", [])
+        if not highlight_paths:
+            return False
+
+        # 完全一致チェック
+        if field_path in highlight_paths:
+            return True
+
+        # 親パスが含まれているかチェック（例: "profile" がハイライト対象なら "profile.name" もハイライト）
+        for hp in highlight_paths:
+            # 親パスとしてマッチするかチェック
+            if field_path.startswith(hp + ".") or field_path.startswith(hp + "["):
+                return True
+            # 子パスとしてマッチするかチェック（例: "tags[0]" がハイライト対象なら "tags" もハイライト）
+            if hp.startswith(field_path + ".") or hp.startswith(field_path + "["):
+                return True
+
+        return False
+
+    def _get_highlight_style(self) -> dict:
+        """
+        ハイライト用のスタイル設定を返す
+
+        Returns:
+            ハイライトスタイルの辞書
+        """
+        return {
+            "bgcolor": Colors.with_opacity(0.15, Colors.YELLOW),
+            "border_color": Colors.AMBER,
+            "border_width": 2,
+        }
+
+    def _scroll_to_highlighted_field(self) -> None:
+        """
+        ハイライトされたフィールドへ自動スクロールする
+        """
+        highlight_paths = self.app_state.get("highlight_field_paths", [])
+        if not highlight_paths:
+            return
+
+        # 最初のハイライトパスを取得
+        first_highlight_path = highlight_paths[0] if highlight_paths else None
+        if not first_highlight_path:
+            return
+
+        # detail_form_columnを取得
+        detail_form_column = self.ui_controls.get("detail_form_column")
+        if not detail_form_column:
+            return
+
+        # ハイライトされたコントロールを再帰的に検索
+        def find_highlighted_control(controls, target_path):
+            for control in controls:
+                # コントロールのdataを確認
+                if hasattr(control, 'data'):
+                    ctrl_data = control.data
+                    if isinstance(ctrl_data, dict):
+                        ctrl_path = ctrl_data.get("path", "")
+                        if ctrl_path == target_path or target_path.startswith(ctrl_path + ".") or target_path.startswith(ctrl_path + "["):
+                            return control
+                    elif isinstance(ctrl_data, str) and ctrl_data == target_path:
+                        return control
+
+                # 子コントロールを再帰的に検索
+                if hasattr(control, 'controls'):
+                    result = find_highlighted_control(control.controls, target_path)
+                    if result:
+                        return result
+                if hasattr(control, 'content') and control.content:
+                    if hasattr(control.content, 'controls'):
+                        result = find_highlighted_control(control.content.controls, target_path)
+                        if result:
+                            return result
+
+            return None
+
+        # ハイライトされたコントロールを検索
+        highlighted_control = find_highlighted_control(detail_form_column.controls, first_highlight_path)
+
+        if highlighted_control:
+            try:
+                # scroll_toメソッドが使用可能な場合はスクロール
+                if hasattr(detail_form_column, 'scroll_to'):
+                    # キーを使用してスクロール
+                    if hasattr(highlighted_control, 'key') and highlighted_control.key:
+                        detail_form_column.scroll_to(key=highlighted_control.key, duration=300)
+                    else:
+                        # オフセットを使用してスクロール（おおよその位置）
+                        # 最初のハイライトが見えるようにスクロール
+                        detail_form_column.scroll_to(offset=0, duration=300)
+                print(f"[SCROLL] ハイライトフィールド '{first_highlight_path}' へスクロールしました")
+            except Exception as e:
+                print(f"[WARNING] スクロールに失敗: {e}")
+
     def build_form_controls(self, data_obj: dict, field_details_map: dict, key_prefix: str = "") -> list[ft.Control]:
         """
         データオブジェクトに基づいてフォームコントロールを再帰的に構築する
@@ -591,14 +698,21 @@ class FormManager(EventAwareManager):
 
             control_to_add = None
 
+            # ハイライト判定
+            is_highlighted = self._is_field_highlighted(current_key_path)
+            highlight_style = self._get_highlight_style() if is_highlighted else {}
+
             # 辞書型の場合は再帰的に処理
             if field_type == "dict":
                 nested_controls = self.build_form_controls(value, field_details_map, current_key_path)
                 if nested_controls:
+                    # ハイライト時はアイコンも色変更
+                    header_icon_color = Colors.AMBER if is_highlighted else None
                     header_content = ft.Row(
                         [
-                            ft.Icon(ft.Icons.SETTINGS_INPUT_COMPONENT),
-                            ft.Text(key, weight=ft.FontWeight.W_500)
+                            ft.Icon(ft.Icons.SETTINGS_INPUT_COMPONENT, color=header_icon_color),
+                            ft.Text(key, weight=ft.FontWeight.W_500,
+                                   color=Colors.AMBER_900 if is_highlighted else None)
                         ],
                     )
                     clickable_header = ft.Container(
@@ -606,8 +720,9 @@ class FormManager(EventAwareManager):
                         on_click=toggle_expansion_func,
                         ink=True,
                         border_radius=ft.border_radius.all(4),
+                        bgcolor=highlight_style.get("bgcolor") if is_highlighted else None,
                     )
-                    control_to_add = ft.ExpansionPanelList(
+                    expansion_panel = ft.ExpansionPanelList(
                         expand_icon_color=Colors.with_opacity(0.5, Colors.ON_SURFACE),
                         elevation=0,
                         divider_color=Colors.with_opacity(0.3, Colors.OUTLINE),
@@ -624,6 +739,17 @@ class FormManager(EventAwareManager):
                         ],
                         data=current_key_path
                     )
+                    # ハイライト時はボーダーでラップ
+                    if is_highlighted:
+                        control_to_add = ft.Container(
+                            content=expansion_panel,
+                            border=ft.border.all(highlight_style.get("border_width", 2),
+                                                highlight_style.get("border_color", Colors.AMBER)),
+                            border_radius=5,
+                            data={"path": current_key_path, "highlighted": True}
+                        )
+                    else:
+                        control_to_add = expansion_panel
                 else:
                     text_area = ft.TextField(
                         label=key,
@@ -634,14 +760,16 @@ class FormManager(EventAwareManager):
                         dense=True,
                         data={"path": current_key_path, "type": "dict"},
                         on_change=self.on_form_field_change,
-                        hint_text=t("form.dict_json_hint")
+                        hint_text=t("form.dict_json_hint"),
+                        bgcolor=highlight_style.get("bgcolor") if is_highlighted else None,
+                        border_color=highlight_style.get("border_color") if is_highlighted else None,
                     )
                     control_to_add = ft.Container(
                         content=ft.Column([
                             ft.Text(t("form.dict_type"), size=12, color=Colors.ON_SURFACE_VARIANT),
                             text_area
                         ]),
-                        data={"path": current_key_path, "type": "dict"}
+                        data={"path": current_key_path, "type": "dict", "highlighted": is_highlighted}
                     )
 
             # リスト型の場合
@@ -650,9 +778,14 @@ class FormManager(EventAwareManager):
                     list_items_controls = []
                     for index, item in enumerate(value):
                         item_prefix = f"{current_key_path}[{index}]"
+                        # リスト要素のハイライト判定
+                        is_item_highlighted = self._is_field_highlighted(item_prefix)
+                        item_highlight_style = self._get_highlight_style() if is_item_highlighted else {}
+
                         if isinstance(item, dict):
                             dict_header = ft.Row([
-                                ft.Text(f"[{index}]", weight=ft.FontWeight.W_500),
+                                ft.Text(f"[{index}]", weight=ft.FontWeight.W_500,
+                                       color=Colors.AMBER_900 if is_item_highlighted else None),
                                 ft.IconButton(
                                     icon=ft.Icons.DELETE_OUTLINE,
                                     icon_size=16,
@@ -663,24 +796,33 @@ class FormManager(EventAwareManager):
                             ])
                             list_items_controls.append(dict_header)
                             nested_item_controls = self.build_form_controls(item, field_details_map, item_prefix)
+                            # ハイライト時はボーダー色を変更
+                            item_border_color = item_highlight_style.get("border_color", Colors.OUTLINE_VARIANT) if is_item_highlighted else Colors.OUTLINE_VARIANT
+                            item_border_width = item_highlight_style.get("border_width", 1) if is_item_highlighted else 1
                             list_items_controls.append(
                                 ft.Container(
                                     content=ft.Column(nested_item_controls, spacing=5),
                                     padding=ft.padding.only(left=15),
-                                    border=ft.border.all(1, Colors.OUTLINE_VARIANT),
+                                    border=ft.border.all(item_border_width, item_border_color),
                                     border_radius=5,
-                                    margin=ft.margin.only(bottom=10)
+                                    margin=ft.margin.only(bottom=10),
+                                    bgcolor=item_highlight_style.get("bgcolor") if is_item_highlighted else None,
+                                    data={"path": item_prefix, "highlighted": is_item_highlighted}
                                 )
                             )
                         else:
+                            # プリミティブ要素のハイライト
                             item_row = ft.Row([
-                                ft.Text(f"[{index}]"),
+                                ft.Text(f"[{index}]",
+                                       color=Colors.AMBER_900 if is_item_highlighted else None),
                                 ft.TextField(
                                     value=str(item),
                                     expand=True,
                                     dense=True,
                                     data={"path": item_prefix, "type": "list_item"},
-                                    on_change=self.on_form_field_change
+                                    on_change=self.on_form_field_change,
+                                    bgcolor=item_highlight_style.get("bgcolor") if is_item_highlighted else None,
+                                    border_color=item_highlight_style.get("border_color") if is_item_highlighted else None,
                                 ),
                                 ft.IconButton(
                                     icon=ft.Icons.DELETE_OUTLINE,
@@ -699,10 +841,13 @@ class FormManager(EventAwareManager):
                         data=current_key_path
                     )
 
+                    # リスト全体のハイライト
+                    header_icon_color = Colors.AMBER if is_highlighted else None
                     header_content = ft.Row(
                         [
-                            ft.Icon(ft.Icons.FORMAT_LIST_NUMBERED),
-                            ft.Text(f"{key} [{len(value)} items]", weight=ft.FontWeight.W_500)
+                            ft.Icon(ft.Icons.FORMAT_LIST_NUMBERED, color=header_icon_color),
+                            ft.Text(f"{key} [{len(value)} items]", weight=ft.FontWeight.W_500,
+                                   color=Colors.AMBER_900 if is_highlighted else None)
                         ],
                     )
                     clickable_header = ft.Container(
@@ -710,8 +855,9 @@ class FormManager(EventAwareManager):
                         on_click=toggle_expansion_func,
                         ink=True,
                         border_radius=ft.border_radius.all(4),
+                        bgcolor=highlight_style.get("bgcolor") if is_highlighted else None,
                     )
-                    control_to_add = ft.ExpansionPanelList(
+                    expansion_panel = ft.ExpansionPanelList(
                         expand_icon_color=Colors.with_opacity(0.5, Colors.ON_SURFACE),
                         elevation=0,
                         divider_color=Colors.with_opacity(0.3, Colors.OUTLINE),
@@ -731,6 +877,17 @@ class FormManager(EventAwareManager):
                         ],
                         data=current_key_path
                     )
+                    # ハイライト時はボーダーでラップ
+                    if is_highlighted:
+                        control_to_add = ft.Container(
+                            content=expansion_panel,
+                            border=ft.border.all(highlight_style.get("border_width", 2),
+                                                highlight_style.get("border_color", Colors.AMBER)),
+                            border_radius=5,
+                            data={"path": current_key_path, "highlighted": True}
+                        )
+                    else:
+                        control_to_add = expansion_panel
                 else:
                     text_area = ft.TextField(
                         label=key,
@@ -741,24 +898,40 @@ class FormManager(EventAwareManager):
                         dense=True,
                         data=current_key_path,
                         on_change=self.on_form_field_change,
-                        hint_text=t("form.list_json_hint")
+                        hint_text=t("form.list_json_hint"),
+                        bgcolor=highlight_style.get("bgcolor") if is_highlighted else None,
+                        border_color=highlight_style.get("border_color") if is_highlighted else None,
                     )
                     control_to_add = ft.Container(
                         content=ft.Column([
                             ft.Text(t("form.list_type"), size=12, color=Colors.ON_SURFACE_VARIANT),
                             text_area
                         ]),
-                        data=current_key_path
+                        data={"path": current_key_path, "highlighted": is_highlighted}
                     )
 
             # ブール型の場合
             elif field_type == "bool":
-                control_to_add = ft.Checkbox(
+                checkbox = ft.Checkbox(
                     label=key,
                     value=bool(value),
                     data={"path": current_key_path, "type": "bool"},
-                    on_change=self.on_form_field_change
+                    on_change=self.on_form_field_change,
+                    fill_color=Colors.AMBER if is_highlighted else None,
                 )
+                # ハイライト時はコンテナでラップ
+                if is_highlighted:
+                    control_to_add = ft.Container(
+                        content=checkbox,
+                        bgcolor=highlight_style.get("bgcolor"),
+                        border=ft.border.all(highlight_style.get("border_width", 2),
+                                            highlight_style.get("border_color", Colors.AMBER)),
+                        border_radius=5,
+                        padding=5,
+                        data={"path": current_key_path, "highlighted": True}
+                    )
+                else:
+                    control_to_add = checkbox
 
             # 数値型の場合
             elif field_type == "int" or field_type == "float":
@@ -766,10 +939,12 @@ class FormManager(EventAwareManager):
                     label=key,
                     value=str(value),
                     keyboard_type=ft.KeyboardType.NUMBER,
-                    data={"path": current_key_path, "is_id": is_id_field},
+                    data={"path": current_key_path, "is_id": is_id_field, "highlighted": is_highlighted},
                     dense=True,
                     hint_text=t("form.id_field_hint") if is_id_field else None,
-                    on_change=self.on_id_field_change if is_id_field else self.on_form_field_change
+                    on_change=self.on_id_field_change if is_id_field else self.on_form_field_change,
+                    bgcolor=highlight_style.get("bgcolor") if is_highlighted else None,
+                    border_color=highlight_style.get("border_color") if is_highlighted else None,
                 )
 
             # その他の型（文字列など）の場合
@@ -781,9 +956,11 @@ class FormManager(EventAwareManager):
                     min_lines=1,
                     max_lines=5 if isinstance(value, str) and (len(value) > 60 or '\n' in value) else 1,
                     dense=True,
-                    data={"path": current_key_path, "is_id": is_id_field},
+                    data={"path": current_key_path, "is_id": is_id_field, "highlighted": is_highlighted},
                     hint_text=t("form.id_field_hint") if is_id_field else None,
-                    on_change=self.on_id_field_change if is_id_field else self.on_form_field_change
+                    on_change=self.on_id_field_change if is_id_field else self.on_form_field_change,
+                    bgcolor=highlight_style.get("bgcolor") if is_highlighted else None,
+                    border_color=highlight_style.get("border_color") if is_highlighted else None,
                 )
 
             if control_to_add:

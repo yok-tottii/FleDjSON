@@ -143,11 +143,11 @@ class SearchManager(EventAwareManager):
     def build_search_index(self) -> None:
         """全ノードの検索インデックスを構築"""
         self.search_index = []
-        
+
         # JSONデータが読み込まれていない場合は何もしない
         if not self.app_state.get("raw_data"):
             return
-        
+
         # 検索インデックスの構築
         def index_node(
             node: Dict[str, Any],
@@ -182,24 +182,29 @@ class SearchManager(EventAwareManager):
                 node_id = path
 
             node_text = str(node.get(label_key, ""))
-            
+
             # 検索対象に追加するフィールド（キーと値の両方）
             extra_fields = []
-            
+
+            # フィールドパスと検索テキストのマッピング（マッチしたフィールド特定用）
+            field_text_map = {}
+
             # 重要: タグや配列フィールドの特別処理を追加
             if "tags" in node and isinstance(node["tags"], list):
                 # タグ配列の各要素を個別にインデックスに追加
                 tags_str = " ".join([str(tag) for tag in node["tags"] if str(tag).strip()])
                 if tags_str:
                     extra_fields.append(tags_str)
-                
+                    field_text_map["tags"] = tags_str.lower()
+
                 # 各タグを個別に追加
-                for tag in node["tags"]:
+                for i, tag in enumerate(node["tags"]):
                     tag_str = str(tag)
                     if tag_str.strip():
                         extra_fields.append(tag_str)
+                        field_text_map[f"tags[{i}]"] = tag_str.lower()
                         print(f"  - タグ {tag_str} を検索テキストに追加")
-            
+
             # 再帰的にノードのすべてのフィールドを検索対象に追加
             def extract_searchable_text(obj, prefix=""):
                 """オブジェクトから検索可能なテキストを再帰的に抽出"""
@@ -208,11 +213,17 @@ class SearchManager(EventAwareManager):
                     dict_str = str(obj)
                     if dict_str and dict_str.strip():
                         extra_fields.append(dict_str)
-                        
+                        if prefix:
+                            field_text_map[prefix] = dict_str.lower()
+
                     for k, v in obj.items():
                         # キー名も検索対象に追加
                         if isinstance(k, str):
                             extra_fields.append(k)
+                            current_path = f"{prefix}.{k}" if prefix else k
+                            # キー名自体もマッピングに追加
+                            if current_path not in field_text_map:
+                                field_text_map[current_path] = k.lower()
                         # 値を再帰的に処理
                         extract_searchable_text(v, f"{prefix}.{k}" if prefix else k)
                 elif isinstance(obj, list):
@@ -220,13 +231,17 @@ class SearchManager(EventAwareManager):
                     list_str = str(obj)
                     if list_str and list_str.strip():
                         extra_fields.append(list_str)
-                    
+                        if prefix:
+                            field_text_map[prefix] = list_str.lower()
+
                     # リストの各要素も個別に追加
                     for i, item in enumerate(obj):
                         # 各要素を文字列化して直接追加（プリミティブ値）
                         item_str = str(item)
                         if item_str and item_str.strip():
                             extra_fields.append(item_str)
+                            item_path = f"{prefix}[{i}]"
+                            field_text_map[item_path] = item_str.lower()
                         # 複雑な型は再帰的に処理
                         if isinstance(item, (dict, list)):
                             extract_searchable_text(item, f"{prefix}[{i}]")
@@ -235,7 +250,13 @@ class SearchManager(EventAwareManager):
                     obj_str = str(obj)
                     if obj_str and obj_str.strip():  # 空でない場合のみ追加
                         extra_fields.append(obj_str)
-            
+                        if prefix:
+                            # 既存のマッピングがある場合は追加
+                            if prefix in field_text_map:
+                                field_text_map[prefix] = f"{field_text_map[prefix]} {obj_str.lower()}"
+                            else:
+                                field_text_map[prefix] = obj_str.lower()
+
             # ノード内のすべてのフィールドを抽出
             for key, value in node.items():
                 if key not in [children_key]:  # children_field は別途処理するので除外
@@ -244,36 +265,39 @@ class SearchManager(EventAwareManager):
                         print(f"  リストフィールド {key} を処理中")
                         # リスト全体を文字列として追加
                         extra_fields.append(str(value))
-                        
+                        field_text_map[key] = str(value).lower()
+
                         # リストの各要素も個別に追加
-                        for item in value:
+                        for i, item in enumerate(value):
                             item_str = str(item)
                             if item_str and item_str.strip():
                                 extra_fields.append(item_str)
+                                field_text_map[f"{key}[{i}]"] = item_str.lower()
                                 print(f"    - 要素 {item_str} を検索テキストに追加")
-                    
+
                     extract_searchable_text(value, key)
-                    
+
                     # キー名自体も検索対象に追加
                     extra_fields.append(key)
-            
+
             # 重複を排除してリストを効率化
             unique_extra_fields = list(set(extra_fields))
-            
+
             # 空文字を除外
             unique_extra_fields = [field for field in unique_extra_fields if field and field.strip()]
-            
+
             # デバッグ出力
-            
+
             # 検索対象の文字列をまとめる
             search_text = f"{node_text} {node_id} {' '.join(unique_extra_fields)}"
-            
-            # インデックスに追加
+
+            # インデックスに追加（field_text_mapも含める）
             self.search_index.append({
                 "text": search_text.lower(),
                 "path": path,
                 "node": node,
-                "id": node_id
+                "id": node_id,
+                "field_text_map": field_text_map  # フィールドパスと検索テキストのマッピング
             })
             
             # データマップに登録する
@@ -359,38 +383,73 @@ class SearchManager(EventAwareManager):
         else:
             self.perform_search()
     
+    def _find_matched_field_paths(self, item: Dict[str, Any], search_term_lower: str) -> List[str]:
+        """
+        検索インデックス項目からマッチしたフィールドパスを特定する
+
+        Args:
+            item: 検索インデックスの項目
+            search_term_lower: 小文字に変換された検索語
+
+        Returns:
+            マッチしたフィールドパスのリスト
+        """
+        matched_paths = []
+        field_text_map = item.get("field_text_map", {})
+
+        for field_path, field_text in field_text_map.items():
+            if search_term_lower in field_text:
+                matched_paths.append(field_path)
+
+        # マッチしたパスを優先度でソート（より具体的なパスを先に）
+        # 例: "profile.email" は "profile" より優先
+        matched_paths.sort(key=lambda x: (-x.count('.'), -x.count('['), x))
+
+        return matched_paths
+
     def perform_search(self) -> None:
         """検索を実行し結果を更新"""
         # 検索が空の場合は結果をクリア
         if not self.search_term:
             self.clear_search_results()
             return
-        
+
         # インデックスが構築されていない場合は構築
         if not self.search_index:
             self.build_search_index()
-        
+
         # 検索実行の開始をログに記録
-        
+
         # 検索語を小文字に変換
         search_term_lower = self.search_term.lower()
-        
+
         # 検索実行
         self.search_results = []
         for item in self.search_index:
             if search_term_lower in item["text"]:
-                self.search_results.append(item)
-                print(f"  一致: ID={item['id']}, 抜粋={item['text'][:50]}...")
-        
+                # マッチしたフィールドパスを特定
+                matched_paths = self._find_matched_field_paths(item, search_term_lower)
+
+                # 結果に追加（matched_pathsも含める）
+                result_item = {
+                    "text": item["text"],
+                    "path": item["path"],
+                    "node": item["node"],
+                    "id": item["id"],
+                    "matched_paths": matched_paths  # マッチしたフィールドパスのリスト
+                }
+                self.search_results.append(result_item)
+                print(f"  一致: ID={item['id']}, マッチフィールド={matched_paths[:3]}...")
+
         # 検索結果の処理
         self.current_search_index = -1  # 初期化
-        
+
         # 検索結果の表示を更新
         self.update_search_results_display()
-        
+
         # 検索結果レポート
         print(f"[OK] 検索結果: {len(self.search_results)}件")
-        
+
         # 検索結果がある場合は最初の結果を選択
         if self.search_results:
             self.select_search_result(0)
@@ -402,6 +461,8 @@ class SearchManager(EventAwareManager):
                 )
         else:
             print(f"[WARNING] 検索語 '{self.search_term}' に一致する結果が見つかりませんでした")
+            # ハイライト対象をクリア
+            self.app_state["highlight_field_paths"] = []
             # 結果が見つからない場合でも、UIを更新する必要がある
             if self.page:
                 self.page.update()
@@ -518,16 +579,22 @@ class SearchManager(EventAwareManager):
         """指定インデックスの検索結果を選択"""
         if not self.search_results or index < 0 or index >= len(self.search_results):
             return
-            
+
         # インデックスを更新
         self.current_search_index = index
-        
+
         # 選択した検索結果のノードIDを取得
         selected_node_id = self.search_results[index]["id"]
-        
+
+        # マッチしたフィールドパスを取得してapp_stateに保存
+        matched_paths = self.search_results[index].get("matched_paths", [])
+        self.app_state["highlight_field_paths"] = matched_paths
+        self.app_state["search_term"] = self.search_term  # 検索語も保存
+        print(f"[HIGHLIGHT] ハイライト対象フィールド: {matched_paths}")
+
         # マネージャー参照を更新
         self._update_manager_references()
-        
+
         # ノード選択を実行(複数の方法を試行)
         selection_success = False
 
@@ -539,7 +606,7 @@ class SearchManager(EventAwareManager):
                 print(f"[OK] UIStateManagerでノード {selected_node_id} を選択しました")
             except Exception as e:
                 print(f"[WARNING] UIStateManagerでの選択に失敗: {e}")
-        
+
         # 方法2: UIManagerを使用
         if not selection_success:
             ui_manager = self.app_state.get("ui_manager")
@@ -550,29 +617,29 @@ class SearchManager(EventAwareManager):
                     print(f"[OK] UIManagerでノード {selected_node_id} を選択しました")
                 except Exception as e:
                     print(f"[WARNING] UIManagerでの選択に失敗: {e}")
-        
+
         # 方法3: 直接的なapp_state操作
         if not selection_success:
             try:
                 # app_stateを直接更新
                 self.app_state["selected_node_id"] = selected_node_id
                 print(f"[OK] app_stateでノード {selected_node_id} を選択しました")
-                
+
                 # FormManagerを使用してフォーム更新
                 form_manager = self.app_state.get("form_manager")
                 if form_manager and hasattr(form_manager, "update_detail_form"):
-                    form_manager.update_detail_form()
+                    form_manager.update_detail_form(selected_node_id)
                     print(f"[OK] FormManagerでフォームを更新しました")
                     selection_success = True
                 else:
                     print("[WARNING] FormManagerが見つかりません")
-                
+
             except Exception as e:
                 print(f"[WARNING] 直接選択に失敗: {e}")
-        
+
         if not selection_success:
             print(f"[ERROR] ノード {selected_node_id} の選択に失敗しました")
-        
+
         # 検索結果表示を更新
         self.update_search_results_display()
     
@@ -582,14 +649,24 @@ class SearchManager(EventAwareManager):
         self.search_term = ""
         self.search_results = []
         self.current_search_index = -1
-        
+
+        # ハイライト対象をクリア
+        self.app_state["highlight_field_paths"] = []
+        self.app_state["search_term"] = ""
+
         # 検索フィールドをクリア
         if self.search_field:
             self.search_field.value = ""
             self.search_field.update()
-        
+
         # 検索結果表示を更新
         self.update_search_results_display()
+
+        # フォームを再描画してハイライトを解除
+        form_manager = self.app_state.get("form_manager")
+        selected_node_id = self.app_state.get("selected_node_id")
+        if form_manager and selected_node_id:
+            form_manager.update_detail_form(selected_node_id)
     
     def handle_keyboard_event(self, e: ft.KeyboardEvent) -> bool:
         """

@@ -486,9 +486,11 @@ class SearchManager(EventAwareManager):
                 continue
 
             # マッチしたパスが全て深いパス(ネストされた子フィールド)のみの場合は除外
-            # 深いパス = ドットまたはブラケットが含まれる(例: products[0].clients[0].industry)
+            # ネストレベル = ドット数 + ブラケット数（2以上は深いパスとみなす）
+            # 例: name(0), tags[0](1), organization.name(1) → 直接フィールド
+            # 例: products[0].name(2), products[0].clients[0].industry(4) → 深いパス
             has_direct_field = any(
-                '.' not in path and path.count('[') <= 1
+                (path.count('.') + path.count('[')) <= 1
                 for path in matched_paths
             )
 
@@ -686,7 +688,7 @@ class SearchManager(EventAwareManager):
                 form_manager = self.app_state.get("form_manager")
                 if form_manager and hasattr(form_manager, "update_detail_form"):
                     form_manager.update_detail_form(selected_node_id)
-                    print(f"[OK] FormManagerでフォームを更新しました")
+                    print("[OK] FormManagerでフォームを更新しました")
                     selection_success = True
                 else:
                     print("[WARNING] FormManagerが見つかりません")
@@ -1173,7 +1175,7 @@ class SearchManager(EventAwareManager):
                     
                     # ページ全体の更新
                     if self.page:
-                        print(f"[OK] ページ全体を更新します")
+                        print("[OK] ページ全体を更新します")
                         self.page.update()
                 else:
                     print(f"[WARNING] 検索語 '{old_term}' に一致する結果が見つかりませんでした")

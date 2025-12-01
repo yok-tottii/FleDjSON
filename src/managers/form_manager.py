@@ -595,46 +595,36 @@ class FormManager(EventAwareManager):
         if not detail_form_column:
             return
 
-        # ハイライトされたコントロールを再帰的に検索
-        def find_highlighted_control(controls, target_path):
+        # ハイライトされたコントロールを再帰的に検索（key属性を優先）
+        def find_control_with_key(controls, target_key):
+            """key属性を持つコントロールを検索"""
             for control in controls:
-                # コントロールのdataを確認
-                if hasattr(control, 'data'):
-                    ctrl_data = control.data
-                    if isinstance(ctrl_data, dict):
-                        ctrl_path = ctrl_data.get("path", "")
-                        if ctrl_path == target_path or target_path.startswith(ctrl_path + ".") or target_path.startswith(ctrl_path + "["):
-                            return control
-                    elif isinstance(ctrl_data, str) and ctrl_data == target_path:
-                        return control
+                # key属性を直接チェック
+                if hasattr(control, 'key') and control.key == target_key:
+                    return control
 
                 # 子コントロールを再帰的に検索
                 if hasattr(control, 'controls'):
-                    result = find_highlighted_control(control.controls, target_path)
+                    result = find_control_with_key(control.controls, target_key)
                     if result:
                         return result
                 if hasattr(control, 'content') and control.content:
                     if hasattr(control.content, 'controls'):
-                        result = find_highlighted_control(control.content.controls, target_path)
+                        result = find_control_with_key(control.content.controls, target_key)
                         if result:
                             return result
 
             return None
 
-        # ハイライトされたコントロールを検索
-        highlighted_control = find_highlighted_control(detail_form_column.controls, first_highlight_path)
+        # key属性でコントロールを検索
+        target_key = f"field_{first_highlight_path}"
+        highlighted_control = find_control_with_key(detail_form_column.controls, target_key)
 
         if highlighted_control:
             try:
                 # scroll_toメソッドが使用可能な場合はスクロール
                 if hasattr(detail_form_column, 'scroll_to'):
-                    # キーを使用してスクロール
-                    if hasattr(highlighted_control, 'key') and highlighted_control.key:
-                        detail_form_column.scroll_to(key=highlighted_control.key, duration=300)
-                    else:
-                        # オフセットを使用してスクロール(おおよその位置)
-                        # 最初のハイライトが見えるようにスクロール
-                        detail_form_column.scroll_to(offset=0, duration=300)
+                    detail_form_column.scroll_to(key=target_key, duration=300)
                 print(f"[SCROLL] ハイライトフィールド '{first_highlight_path}' へスクロールしました")
             except (AttributeError, RuntimeError, ValueError) as e:
                 print(f"[WARNING] スクロールに失敗: {e}")

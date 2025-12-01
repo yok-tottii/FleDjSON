@@ -53,7 +53,7 @@ class FormManager(EventAwareManager):
             event_hub=app_state.get("event_hub")
         )
 
-        # 他のマネージャーへの参照（初期化後に設定される）
+        # 他のマネージャーへの参照(初期化後に設定される)
         self.ui_state_manager = None
         self.data_manager = None
         self.ui_manager = None
@@ -70,7 +70,7 @@ class FormManager(EventAwareManager):
         if "removed_fields" not in self.app_state:
             self.app_state["removed_fields"] = set()
             
-        # 入力順序追跡用のマップを初期化（キーパスを入力順にマッピング）
+        # 入力順序追跡用のマップを初期化(キーパスを入力順にマッピング)
         self._key_input_order = {}
         self._input_counter = 0  # 入力順序をカウントする変数
 
@@ -104,7 +104,7 @@ class FormManager(EventAwareManager):
             # フォームが空の初期状態の場合
             if len(detail_form.controls) == 1 and hasattr(detail_form.controls[0], 'value'):
                 current_value = detail_form.controls[0].value
-                # 初期メッセージかどうかを判定（言語非依存）
+                # 初期メッセージかどうかを判定(言語非依存)
                 if current_value in ["ノードを選択してください", "Select a node"]:
                     detail_form.controls[0].value = t("form.select_node_message")
                     detail_form.controls[0].update()
@@ -195,10 +195,10 @@ class FormManager(EventAwareManager):
         for i in range(len(parts) - 1, 0, -1):
             parent_path = '.'.join(parts[:i])
             if parent_path in self._key_input_order:
-                # 親パスの順序 + 0.1 を返す（親より少し後の順序にする）
+                # 親パスの順序 + 0.1 を返す(親より少し後の順序にする)
                 return self._key_input_order[parent_path] + 0.1
                 
-        # 配列インデックスの処理（例: tags[0]）
+        # 配列インデックスの処理(例: tags[0])
         array_match = re.match(r'^(.+)\[\d+\]$', key_path)
         if array_match:
             array_path = array_match.group(1)
@@ -268,7 +268,7 @@ class FormManager(EventAwareManager):
             print("[INFO] In add mode, skipping detail form update.")
             return
             
-        # 削除確認モードを解除（UIStateManagerと整合させる）
+        # 削除確認モードを解除(UIStateManagerと整合させる)
         ui_state_manager = self.app_state.get("ui_state_manager")
         if ui_state_manager:
             ui_state_manager.set_delete_confirm_mode(False)
@@ -394,7 +394,7 @@ class FormManager(EventAwareManager):
                     cancel_button.on_click = self.cancel_changes
                     cancel_button.disabled = not is_dirty
                 
-                # 削除ボタンを追加（通常モード用）
+                # 削除ボタンを追加(通常モード用)
                 delete_button = self.ui_controls.get("detail_delete_button")
                 if not delete_button:
                     delete_button = ft.OutlinedButton(
@@ -486,7 +486,7 @@ class FormManager(EventAwareManager):
         detail_form_column.update()
         print("[OK] Detail form cleared")
         
-        # UIStateManagerと状態同期（選択ノードIDがクリアされたことを通知）
+        # UIStateManagerと状態同期(選択ノードIDがクリアされたことを通知)
         ui_state_manager = self.app_state.get("ui_state_manager")
         if ui_state_manager and old_selected_id:
             ui_state_manager.deselect_node()
@@ -532,7 +532,7 @@ class FormManager(EventAwareManager):
                 except Exception as ex:
                     print(f"[ERROR] Error updating cancel_button: {ex}")
         
-        # delete_buttonがある場合に更新を確認（削除ボタンはis_dirtyに依存しない）
+        # delete_buttonがある場合に更新を確認(削除ボタンはis_dirtyに依存しない)
         if delete_button and hasattr(delete_button, 'page') and delete_button.page is not None:
             try:
                 delete_button.update()
@@ -549,7 +549,7 @@ class FormManager(EventAwareManager):
         """
         フィールドがハイライト対象かどうかを判定する
 
-        マッチしたフィールドのみをハイライトする（親子への伝播なし）
+        マッチしたフィールドのみをハイライトする(親子への伝播なし)
 
         Args:
             field_path: フィールドのパス
@@ -561,7 +561,7 @@ class FormManager(EventAwareManager):
         if not highlight_paths:
             return False
 
-        # 完全一致のみチェック（より限定的なハイライト）
+        # 完全一致のみチェック(より限定的なハイライト)
         return field_path in highlight_paths
 
     def _get_highlight_style(self) -> dict:
@@ -632,11 +632,11 @@ class FormManager(EventAwareManager):
                     if hasattr(highlighted_control, 'key') and highlighted_control.key:
                         detail_form_column.scroll_to(key=highlighted_control.key, duration=300)
                     else:
-                        # オフセットを使用してスクロール（おおよその位置）
+                        # オフセットを使用してスクロール(おおよその位置)
                         # 最初のハイライトが見えるようにスクロール
                         detail_form_column.scroll_to(offset=0, duration=300)
                 print(f"[SCROLL] ハイライトフィールド '{first_highlight_path}' へスクロールしました")
-            except Exception as e:
+            except (AttributeError, RuntimeError, ValueError) as e:
                 print(f"[WARNING] スクロールに失敗: {e}")
 
     def build_form_controls(self, data_obj: dict, field_details_map: dict, key_prefix: str = "") -> list[ft.Control]:
@@ -937,7 +937,7 @@ class FormManager(EventAwareManager):
                     border_color=highlight_style.get("border_color") if is_highlighted else None,
                 )
 
-            # その他の型（文字列など）の場合
+            # その他の型(文字列など)の場合
             else:
                 control_to_add = ft.TextField(
                     label=key,
@@ -1013,7 +1013,7 @@ class FormManager(EventAwareManager):
                     # サンプルが見つからない場合は最小限のオブジェクトを作成
                     sample_obj = {id_key: ""}
 
-                # テンプレートオブジェクトの作成（ディープコピー）
+                # テンプレートオブジェクトの作成(ディープコピー)
                 template_obj = copy.deepcopy(sample_obj)
 
                 # テンプレートの値をリセット
@@ -1113,7 +1113,7 @@ class FormManager(EventAwareManager):
                          if is_uuid_like:
                              new_id = str(uuid.uuid4())
                          else:
-                             # UUID形式でなければ、単純な文字列IDを生成（例: "new_item_1"）
+                             # UUID形式でなければ、単純な文字列IDを生成(例: "new_item_1")
                              count = 1
                              while f"new_item_{count}" in existing_ids:
                                  count += 1
@@ -1246,7 +1246,7 @@ class FormManager(EventAwareManager):
         # フィールドの役割に基づいてソート
         field_order = []
         for field, value in template_data.items():
-            # フィールドの重要度に基づいて順序付け（IDフィールド、名前フィールド、その他の順）
+            # フィールドの重要度に基づいて順序付け(IDフィールド、名前フィールド、その他の順)
             if field_roles.get(field, "") in ["id", "parent_id"]:
                 order = 0
             elif field_roles.get(field, "") in ["name", "label", "title"]:
@@ -1259,7 +1259,7 @@ class FormManager(EventAwareManager):
         for field, _ in sorted(field_order, key=lambda x: x[1]):
             value = template_data.get(field)
             
-            # フィールドの型情報（利用可能な場合）
+            # フィールドの型情報(利用可能な場合)
             field_type = None
             data_templates = self.app_state.get("data_templates", {})
             if "main" in data_templates and "fields" in data_templates["main"]:
@@ -1392,7 +1392,7 @@ class FormManager(EventAwareManager):
                     # サンプルが見つからない場合は最小限のオブジェクトを作成
                     sample_obj = {id_key: ""}
 
-                # テンプレートオブジェクトの作成（ディープコピー）
+                # テンプレートオブジェクトの作成(ディープコピー)
                 template_obj = copy.deepcopy(sample_obj)
 
                 # テンプレートの値をリセット
@@ -1492,7 +1492,7 @@ class FormManager(EventAwareManager):
                          if is_uuid_like:
                              new_id = str(uuid.uuid4())
                          else:
-                             # UUID形式でなければ、単純な文字列IDを生成（例: "new_item_1"）
+                             # UUID形式でなければ、単純な文字列IDを生成(例: "new_item_1")
                              count = 1
                              while f"new_item_{count}" in existing_ids:
                                  count += 1
@@ -1703,7 +1703,7 @@ class FormManager(EventAwareManager):
             field_container = ft.Container(
                 content=ft.Row(
                     [
-                        # フィールドのコントロール（後で追加）
+                        # フィールドのコントロール(後で追加)
                         ft.Container(expand=True),  # プレースホルダー
                         # 削除ボタン
                         ft.IconButton(
@@ -1918,7 +1918,7 @@ class FormManager(EventAwareManager):
                 field_container.content.controls[0] = number_field
                 control_to_add = field_container
 
-            # その他の型（文字列など）の場合
+            # その他の型(文字列など)の場合
             else:
                 text_field = ft.TextField(
                     label=key,
@@ -2072,7 +2072,7 @@ class FormManager(EventAwareManager):
 
             new_id_str = str(new_value)
 
-            # IDの重複チェック（リアルタイム） - オプションでエラー表示
+            # IDの重複チェック(リアルタイム) - オプションでエラー表示
             if new_id_str != current_node_id and new_id_str in self.app_state["data_map"]:
                 control.error_text = t("error.id_already_used")
             else:
@@ -2137,7 +2137,7 @@ class FormManager(EventAwareManager):
             if isinstance(self.app_state["raw_data"], list):
                 raw_obj_ref = next((item for item in self.app_state["raw_data"] if isinstance(item, dict) and str(item.get(id_key)) == current_node_id), None)
             elif isinstance(self.app_state["raw_data"], dict) and str(self.app_state["raw_data"].get(id_key)) == current_node_id:
-                # ルートが辞書の場合（非推奨だが考慮）
+                # ルートが辞書の場合(非推奨だが考慮)
                 raw_obj_ref = self.app_state["raw_data"]
 
             if raw_obj_ref is None:
@@ -2196,7 +2196,7 @@ class FormManager(EventAwareManager):
 
         for key_path in sorted_keys:
             value_to_set = self.app_state["edit_buffer"][key_path]
-            # ID自体の更新は data_map キー変更後に行うためスキップ（new_id が設定されている場合）
+            # ID自体の更新は data_map キー変更後に行うためスキップ(new_id が設定されている場合)
             if key_path == id_key and new_id is not None:
                 print(f"  Skipping data_map value update for ID key '{key_path}' for now.")
                 # raw_data の ID はここで更新しておく
@@ -2284,14 +2284,14 @@ class FormManager(EventAwareManager):
                         force_label_update=True
                     )
 
-            # ツリービュー全体を更新（左ペイン） - ID変更があった場合、表示が変わる
+            # ツリービュー全体を更新(左ペイン) - ID変更があった場合、表示が変わる
             if ui_manager:
                 ui_manager.update_tree_view()
 
-            # 詳細フォームを再表示（右ペイン） - 保存後は最新のデータで再描画 (更新後の current_node_id で)
+            # 詳細フォームを再表示(右ペイン) - 保存後は最新のデータで再描画 (更新後の current_node_id で)
             self.update_detail_form(current_node_id)
 
-            # 検索インデックスを更新（検索機能が利用可能な場合）
+            # 検索インデックスを更新(検索機能が利用可能な場合)
             search_manager = self.app_state.get("search_manager")
             if search_manager:
                 # 現在のノードIDの検索インデックスを更新
@@ -2333,7 +2333,7 @@ class FormManager(EventAwareManager):
 
     def apply_edit_buffer_to_data(self) -> tuple[bool, dict]:
         """
-        edit_bufferの内容をdata_mapとraw_dataに適用する（UIは更新しない）
+        edit_bufferの内容をdata_mapとraw_dataに適用する(UIは更新しない)
         
         Returns:
             tuple[bool, dict]: (成功フラグ, エラー辞書)
@@ -2491,7 +2491,7 @@ class FormManager(EventAwareManager):
 
         selected_node_id = self.app_state.get("selected_node_id")
         if selected_node_id:
-            # フォームを元のデータ（変更前）で再描画
+            # フォームを元のデータ(変更前)で再描画
             self.update_detail_form(selected_node_id)
             print(f"[CANCEL] Changes canceled. Restored form for node {selected_node_id}.")
         else:
@@ -2624,13 +2624,13 @@ class FormManager(EventAwareManager):
                 if ui_state_manager:
                     ui_state_manager.set_edit_mode(True)
 
-            # UIを更新（フォーム全体を再描画）
+            # UIを更新(フォーム全体を再描画)
             self.update_detail_form(current_node_id)
 
             # ボタンの状態を確実に更新
             self.update_detail_buttons_state()
 
-            # 検索インデックスを即時更新（項目追加後にすぐ検索できるようにするため）
+            # 検索インデックスを即時更新(項目追加後にすぐ検索できるようにするため)
             search_manager = self.app_state.get("search_manager")
             if search_manager:
                 # バッファに変更を適用した一時的なノードデータを作成し、それを使って検索インデックスを更新
@@ -2722,7 +2722,7 @@ class FormManager(EventAwareManager):
                 self.app_state["edit_buffer"][key_path] = new_list
                 print(f"  Buffered list change for {key_path}: {len(new_list)} items")
 
-                # 関連するバッファエントリの削除（例: list[index].field）
+                # 関連するバッファエントリの削除(例: list[index].field)
                 prefix_to_remove = f"{key_path}[{index}]"
                 keys_to_remove = [k for k in self.app_state["edit_buffer"] if k.startswith(prefix_to_remove)]
                 if keys_to_remove:
@@ -2740,7 +2740,7 @@ class FormManager(EventAwareManager):
                     if ui_state_manager:
                         ui_state_manager.set_edit_mode(True)
 
-                # UIを更新（フォーム全体を再描画）
+                # UIを更新(フォーム全体を再描画)
                 self.update_detail_form(current_node_id)
                 print(f"[OK] Item deletion buffered for {key_path}[{index}]. Form updated.")
                 # 代替通知システムを使用
@@ -2965,7 +2965,7 @@ class FormManager(EventAwareManager):
                 # フォームを更新
                 self.update_add_form()
 
-                # 完了通知（代替システム）
+                # 完了通知(代替システム)
                 try:
                     from notification_system import NotificationSystem
                     notification_system = NotificationSystem(page)
@@ -3087,7 +3087,7 @@ class FormManager(EventAwareManager):
                          if is_uuid_like:
                              node_id = str(uuid.uuid4())
                          else:
-                             # UUID形式でなければ、単純な文字列IDを生成（例: "new_item_1"）
+                             # UUID形式でなければ、単純な文字列IDを生成(例: "new_item_1")
                              count = 1
                              while f"new_item_{count}" in existing_ids:
                                  count += 1
@@ -3169,7 +3169,7 @@ class FormManager(EventAwareManager):
             if ui_manager:
                 ui_manager.update_tree_view()
 
-            # 検索インデックスを更新（重要：新規追加ノードを検索可能にする）
+            # 検索インデックスを更新(重要：新規追加ノードを検索可能にする)
             search_manager = self.app_state.get("search_manager")
             if search_manager:
                 # 新規ノードの場合は全インデックスを再構築する方が確実
@@ -3242,7 +3242,7 @@ class FormManager(EventAwareManager):
             # 削除確認モードをONに
             self.app_state["delete_confirm_mode"] = True
 
-        # ノードの表示ラベルを取得（より人間が読みやすい形で表示）
+        # ノードの表示ラベルを取得(より人間が読みやすい形で表示)
         ui_manager = self.app_state.get("ui_manager")
         node_data = self.app_state["data_map"].get(node_id, {})
         
@@ -3341,7 +3341,7 @@ class FormManager(EventAwareManager):
             # 詳細フォームをクリア
             self.clear_detail_form()
 
-            # 完了通知（代替システム）
+            # 完了通知(代替システム)
             try:
                 from notification_system import NotificationSystem
                 notification_system = NotificationSystem(e.page)
@@ -3431,7 +3431,7 @@ class FormManager(EventAwareManager):
             # 追加モードのフォームを更新
             self.update_add_form()
 
-            # フィールド削除通知（代替システム）
+            # フィールド削除通知(代替システム)
             try:
                 from notification_system import NotificationSystem
                 notification_system = NotificationSystem(e.page)

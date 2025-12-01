@@ -1240,6 +1240,7 @@ class UIManager(EventAwareManager):
                 padding=ft.padding.symmetric(vertical=6, horizontal=10),
                 border_radius=5,
                 data=node_id,
+                key=f"tree_node_{node_id}",  # スクロール用のキー属性を追加
                 on_click=self.on_tree_node_select,
                 ink=True,
                 bgcolor=ft.Colors.with_opacity(0.05, ft.Colors.PRIMARY) if self.app_state["selected_node_id"] == node_id else None,

@@ -40,7 +40,7 @@ class SearchManager(EventAwareManager):
         Args:
             app_state: アプリケーションの状態辞書
             ui_controls: UIコントロールの辞書
-            page: Fletページ（キーボードイベント処理用）
+            page: Fletページ(キーボードイベント処理用)
         """
         # EventAwareManagerの初期化
         super().__init__(
@@ -63,7 +63,7 @@ class SearchManager(EventAwareManager):
         self.search_nav = None
         self.no_results_message = None
         
-        # 他のマネージャーへの参照（遅延読み込み）
+        # 他のマネージャーへの参照(遅延読み込み)
         self.ui_state_manager = None
         self.ui_manager = None
         self.form_manager = None
@@ -78,7 +78,7 @@ class SearchManager(EventAwareManager):
         # 検索結果クリアボタン
         self.clear_button = None
         
-        # 他のマネージャーへの参照（初期化後に設定される）
+        # 他のマネージャーへの参照(初期化後に設定される)
         self.ui_state_manager = None
         self.data_manager = None
         self.ui_manager = None
@@ -98,7 +98,7 @@ class SearchManager(EventAwareManager):
         self._setup_event_subscriptions()
     
     def _update_manager_references(self):
-        """他のマネージャーへの参照を更新（遅延読み込み）"""
+        """他のマネージャーへの参照を更新(遅延読み込み)"""
         if not self.ui_state_manager:
             self.ui_state_manager = self.app_state.get("ui_state_manager")
         if not self.ui_manager:
@@ -183,10 +183,10 @@ class SearchManager(EventAwareManager):
 
             node_text = str(node.get(label_key, ""))
 
-            # 検索対象に追加するフィールド（キーと値の両方）
+            # 検索対象に追加するフィールド(キーと値の両方)
             extra_fields = []
 
-            # フィールドパスと検索テキストのマッピング（マッチしたフィールド特定用）
+            # フィールドパスと検索テキストのマッピング(マッチしたフィールド特定用)
             field_text_map = {}
 
             # 重要: タグや配列フィールドの特別処理を追加
@@ -209,7 +209,7 @@ class SearchManager(EventAwareManager):
             def extract_searchable_text(obj, prefix=""):
                 """オブジェクトから検索可能なテキストを再帰的に抽出"""
                 if isinstance(obj, dict):
-                    # 辞書全体を文字列として追加（JSON構造全体で検索できるように）
+                    # 辞書全体を文字列として追加(JSON構造全体で検索できるように)
                     dict_str = str(obj)
                     if dict_str and dict_str.strip():
                         extra_fields.append(dict_str)
@@ -227,7 +227,7 @@ class SearchManager(EventAwareManager):
                         # 値を再帰的に処理
                         extract_searchable_text(v, f"{prefix}.{k}" if prefix else k)
                 elif isinstance(obj, list):
-                    # リスト全体を文字列として追加（重要）
+                    # リスト全体を文字列として追加(重要)
                     list_str = str(obj)
                     if list_str and list_str.strip():
                         extra_fields.append(list_str)
@@ -236,7 +236,7 @@ class SearchManager(EventAwareManager):
 
                     # リストの各要素も個別に追加
                     for i, item in enumerate(obj):
-                        # 各要素を文字列化して直接追加（プリミティブ値）
+                        # 各要素を文字列化して直接追加(プリミティブ値)
                         item_str = str(item)
                         if item_str and item_str.strip():
                             extra_fields.append(item_str)
@@ -291,7 +291,7 @@ class SearchManager(EventAwareManager):
             # 検索対象の文字列をまとめる
             search_text = f"{node_text} {node_id} {' '.join(unique_extra_fields)}"
 
-            # インデックスに追加（field_text_mapも含める）
+            # インデックスに追加(field_text_mapも含める)
             self.search_index.append({
                 "text": search_text.lower(),
                 "path": path,
@@ -357,10 +357,10 @@ class SearchManager(EventAwareManager):
                 else:
                     print(f"[WARNING] Warning: スキップしたルートノード (辞書型ではない): {node}")
         
-        print(f"[DATA] 検索インデックスを構築しました（{len(self.search_index)}ノード）")
+        print(f"[DATA] 検索インデックスを構築しました({len(self.search_index)}ノード)")
     
     def on_search_change(self, e: ft.ControlEvent) -> None:
-        """検索フィールド変更時のハンドラ（デバウンス処理）"""
+        """検索フィールド変更時のハンドラ(デバウンス処理)"""
         # 検索語を保存
         self.search_term = e.control.value
         
@@ -373,7 +373,7 @@ class SearchManager(EventAwareManager):
         self.perform_search()
     
     async def _debounced_search(self) -> None:
-        """デバウンス処理（検索実行を遅延）"""
+        """デバウンス処理(検索実行を遅延)"""
         # 200ms待機してから検索実行
         await asyncio.sleep(0.2)
         
@@ -387,14 +387,14 @@ class SearchManager(EventAwareManager):
         """
         検索インデックス項目からマッチしたフィールドパスを特定する
 
-        より具体的なパス（リーフノード）のみを返し、親パスは除外する
+        より具体的なパス(リーフノード)のみを返し、親パスは除外する
 
         Args:
             item: 検索インデックスの項目
             search_term_lower: 小文字に変換された検索語
 
         Returns:
-            マッチしたフィールドパスのリスト（最も具体的なパスのみ）
+            マッチしたフィールドパスのリスト(最も具体的なパスのみ)
         """
         matched_paths = []
         field_text_map = item.get("field_text_map", {})
@@ -406,25 +406,25 @@ class SearchManager(EventAwareManager):
         if not matched_paths:
             return []
 
-        # マッチしたパスを優先度でソート（より具体的なパスを先に）
+        # マッチしたパスを優先度でソート(より具体的なパスを先に)
         # 例: "profile.email" は "profile" より優先
         matched_paths.sort(key=lambda x: (-x.count('.'), -x.count('['), x))
 
-        # 親パスを除外（子パスが存在する場合）
+        # 親パスを除外(子パスが存在する場合)
         # 例: ["organization.name", "organization"] → ["organization.name"]
-        filtered_paths = []
+        # セットベースの最適化: O(n)でプレフィックスセットを構築
+        path_set = set(matched_paths)
+        parent_prefixes = set()
         for path in matched_paths:
-            # このパスが他のマッチしたパスの親でないかチェック
-            is_parent = False
-            for other_path in matched_paths:
-                if other_path != path and (
-                    other_path.startswith(path + ".") or
-                    other_path.startswith(path + "[")
-                ):
-                    is_parent = True
-                    break
-            if not is_parent:
-                filtered_paths.append(path)
+            # このパスの全ての親プレフィックスを追加
+            parts = path.replace('[', '.').split('.')
+            for i in range(1, len(parts)):
+                prefix = '.'.join(parts[:i])
+                # 元のパス形式に戻す(配列インデックス用)
+                parent_prefixes.add(prefix)
+
+        # 親プレフィックスに含まれないパスのみを残す
+        filtered_paths = [path for path in matched_paths if path not in parent_prefixes]
 
         return filtered_paths
 
@@ -444,14 +444,14 @@ class SearchManager(EventAwareManager):
         # 検索語を小文字に変換
         search_term_lower = self.search_term.lower()
 
-        # 検索実行（一時的な結果リスト）
+        # 検索実行(一時的な結果リスト)
         temp_results = []
         for item in self.search_index:
             if search_term_lower in item["text"]:
                 # マッチしたフィールドパスを特定
                 matched_paths = self._find_matched_field_paths(item, search_term_lower)
 
-                # 結果に追加（matched_pathsも含める）
+                # 結果に追加(matched_pathsも含める)
                 result_item = {
                     "text": item["text"],
                     "path": item["path"],
@@ -462,8 +462,18 @@ class SearchManager(EventAwareManager):
                 temp_results.append(result_item)
                 print(f"  一致: ID={item['id']}, マッチフィールド={matched_paths[:3]}...")
 
-        # 親ノードを除外（子ノードがすでに結果に含まれる場合）
+        # 親ノードを除外(子ノードがすでに結果に含まれる場合)
         result_ids = [r["id"] for r in temp_results]
+
+        # セットベースの最適化: 親IDを事前計算 O(n)
+        parent_ids = set()
+        for node_id in result_ids:
+            # このIDの全ての親プレフィックスを追加
+            parts = node_id.replace('[', '.').split('.')
+            for i in range(1, len(parts)):
+                prefix = '.'.join(parts[:i])
+                parent_ids.add(prefix)
+
         self.search_results = []
         for result in temp_results:
             node_id = result["id"]
@@ -474,32 +484,23 @@ class SearchManager(EventAwareManager):
                 print(f"  除外: {node_id} はマッチパスがないため")
                 continue
 
-            # マッチしたパスが全て深いパス（ネストされた子フィールド）のみの場合は除外
-            # 深いパス = ドットまたはブラケットが含まれる（例: products[0].clients[0].industry）
-            has_direct_field = False
-            for path in matched_paths:
-                # 直接的なフィールド = ドットやブラケットを含まない
-                # または、単一レベルの配列インデックス（例: tags[0]）
-                if '.' not in path and path.count('[') <= 1:
-                    has_direct_field = True
-                    break
+            # マッチしたパスが全て深いパス(ネストされた子フィールド)のみの場合は除外
+            # 深いパス = ドットまたはブラケットが含まれる(例: products[0].clients[0].industry)
+            has_direct_field = any(
+                '.' not in path and path.count('[') <= 1
+                for path in matched_paths
+            )
 
             if not has_direct_field:
-                print(f"  除外: {node_id} は直接フィールドを持たない（深いパスのみ: {matched_paths[:2]}...）")
+                print(f"  除外: {node_id} は直接フィールドを持たない(深いパスのみ: {matched_paths[:2]}...)")
                 continue
 
-            # このノードIDが他の結果の親でないかチェック
-            is_parent = False
-            for other_id in result_ids:
-                if other_id != node_id and (
-                    other_id.startswith(node_id + ".") or
-                    other_id.startswith(node_id + "[")
-                ):
-                    is_parent = True
-                    print(f"  除外: {node_id} は {other_id} の親ノードのため")
-                    break
-            if not is_parent:
-                self.search_results.append(result)
+            # このノードIDが親IDセットに含まれるかチェック O(1)
+            if node_id in parent_ids:
+                print(f"  除外: {node_id} は子ノードの親のため")
+                continue
+
+            self.search_results.append(result)
 
         # 検索結果の処理
         self.current_search_index = -1  # 初期化
@@ -590,7 +591,7 @@ class SearchManager(EventAwareManager):
             if node_id in result_ids:
                 control.opacity = 1.0
 
-                # 選択されている検索結果なら強調表示（右ペインと同じ黄色系）
+                # 選択されている検索結果なら強調表示(右ペインと同じ黄色系)
                 if node_id == selected_result_id:
                     control.bgcolor = ft.Colors.with_opacity(0.15, ft.Colors.YELLOW)
                     # 左ボーダーをハイライト
@@ -778,7 +779,7 @@ class SearchManager(EventAwareManager):
         # 前の結果ボタン
         self.prev_button = ft.IconButton(
             icon=ft.Icons.ARROW_UPWARD,
-            tooltip="前の結果（Shift+↑）",
+            tooltip="前の結果(Shift+↑)",
             on_click=self.go_to_previous_result,
             disabled=True,
             icon_size=20,
@@ -787,13 +788,13 @@ class SearchManager(EventAwareManager):
         # 次の結果ボタン
         self.next_button = ft.IconButton(
             icon=ft.Icons.ARROW_DOWNWARD,
-            tooltip="次の結果（Shift+↓）",
+            tooltip="次の結果(Shift+↓)",
             on_click=self.go_to_next_result,
             disabled=True,
             icon_size=20,
         )
         
-        # 検索結果カウンター（初期テキストを翻訳）
+        # 検索結果カウンター(初期テキストを翻訳)
         self.result_counter = ft.Text(self._format_result_count(0), size=14)
         
         # 検索ナビゲーション
@@ -851,7 +852,7 @@ class SearchManager(EventAwareManager):
             
             # デバッグ: 再構築後のインデックス状態
             node_ids_after = [item['id'] for item in self.search_index]
-            print(f"[OK] 検索インデックスを再構築しました（{len(self.search_index)}ノード）")
+            print(f"[OK] 検索インデックスを再構築しました({len(self.search_index)}ノード)")
             print(f"[OK] 再構築後のノードID: {node_ids_after[:10]}..." if len(node_ids_after) > 10 else f"[OK] 再構築後のノードID: {node_ids_after}")
             
             # 検索語があれば再検索を強制実行
@@ -882,7 +883,7 @@ class SearchManager(EventAwareManager):
                         updated_nodes.append(child_id)
                         collect_child_nodes(child_id)
                 
-                # 直接データから子ノードを取得（配列やネストしたオブジェクト向け）
+                # 直接データから子ノードを取得(配列やネストしたオブジェクト向け)
                 if children_key in node_data and isinstance(node_data[children_key], list):
                     id_key = self.app_state.get("id_key", "id")
                     for child in node_data[children_key]:
@@ -903,7 +904,7 @@ class SearchManager(EventAwareManager):
                 print(f"[WARNING] ノード '{node_id}' が辞書型ではないため、処理をスキップします。")
                 return
                 
-            # 検索テキストに含める追加データ（ネストされた値、子ノードなど）
+            # 検索テキストに含める追加データ(ネストされた値、子ノードなど)
             additional_texts = []
             
             # 編集された可能性のある子要素からテキストを抽出する特別処理
@@ -957,7 +958,7 @@ class SearchManager(EventAwareManager):
                         item_str = str(item)
                         additional_texts.append(item_str)
                         print(f"  抽出: '{child_key}[{i}]' の値「{item_str}」を追加")
-                        # 特別に対象とするキーワード（'a', 'b', 'ccc'など問題が報告されているキーワード）を追加
+                        # 特別に対象とするキーワード('a', 'b', 'ccc'など問題が報告されているキーワード)を追加
                         if item_str in ['a', 'b', 'ccc'] or (isinstance(item, dict) and any(str(v) in ['a', 'b', 'ccc'] for v in item.values())):
                             special_str = str(item)
                             additional_texts.append(special_str)
@@ -971,7 +972,7 @@ class SearchManager(EventAwareManager):
                                 additional_texts.append(item_v_str)
                                 print(f"  抽出: '{child_key}[{i}].{item_k}' の値「{item_v_str}」を追加")
                 else:
-                    # その他の値（プリミティブ型）も追加
+                    # その他の値(プリミティブ型)も追加
                     value_str = str(child_value)
                     additional_texts.append(value_str)
                     print(f"  抽出: フィールド '{child_key}' の値「{value_str}」を追加")
@@ -998,14 +999,14 @@ class SearchManager(EventAwareManager):
                 if label_key in node_data:
                     node_text = str(node_data.get(label_key, ""))
                 
-                # 検索対象に追加するフィールド（キーと値の両方）
+                # 検索対象に追加するフィールド(キーと値の両方)
                 extra_fields = []
                 
                 # すべてのフィールドを抽出
                 def extract_searchable_text(obj, prefix=""):
                     """オブジェクトから検索可能なテキストを再帰的に抽出"""
                     if isinstance(obj, dict):
-                        # 辞書全体を文字列として追加（JSON構造全体で検索できるように）
+                        # 辞書全体を文字列として追加(JSON構造全体で検索できるように)
                         dict_str = str(obj)
                         if dict_str and dict_str.strip():
                             extra_fields.append(dict_str)
@@ -1017,18 +1018,18 @@ class SearchManager(EventAwareManager):
                             # 値を再帰的に処理
                             extract_searchable_text(v, f"{prefix}.{k}" if prefix else k)
                     elif isinstance(obj, list):
-                        # リスト全体を文字列として追加（重要）
+                        # リスト全体を文字列として追加(重要)
                         list_str = str(obj)
                         if list_str and list_str.strip():
                             extra_fields.append(list_str)
                         
                         # リストの各要素も個別に追加
                         for i, item in enumerate(obj):
-                            # 各要素を文字列化して直接追加（プリミティブ値）
+                            # 各要素を文字列化して直接追加(プリミティブ値)
                             item_str = str(item)
                             if item_str and item_str.strip():
                                 extra_fields.append(item_str)
-                                # 特別に対象とするキーワード（'a', 'b', 'ccc'など問題が報告されているキーワード）を追加
+                                # 特別に対象とするキーワード('a', 'b', 'ccc'など問題が報告されているキーワード)を追加
                                 if item_str in ['a', 'b', 'ccc']:
                                     print(f"  特別処理: リスト要素のキーワード '{item_str}' を検索テキストに追加")
                             # 複雑な型は再帰的に処理
@@ -1039,7 +1040,7 @@ class SearchManager(EventAwareManager):
                         obj_str = str(obj)
                         if obj_str and obj_str.strip():  # 空でない場合のみ追加
                             extra_fields.append(obj_str)
-                            # 特別に対象とするキーワード（'a', 'b', 'ccc'など問題が報告されているキーワード）を追加
+                            # 特別に対象とするキーワード('a', 'b', 'ccc'など問題が報告されているキーワード)を追加
                             if obj_str in ['a', 'b', 'ccc']:
                                 print(f"  特別処理: プリミティブ値のキーワード '{obj_str}' を検索テキストに追加")
                 
@@ -1082,7 +1083,7 @@ class SearchManager(EventAwareManager):
                 
                 # 検索対象の文字列をまとめる
                 search_text = f"{node_text} {node_id} {' '.join(unique_extra_fields)}"
-                print(f"    - 検索テキスト（一部）: {search_text[:100]}...")
+                print(f"    - 検索テキスト(一部): {search_text[:100]}...")
                 
                 # 新しいインデックス項目を作成
                 new_index_item = {
@@ -1113,7 +1114,7 @@ class SearchManager(EventAwareManager):
             # 現在の検索語があるか確認
             old_term = getattr(self, 'search_term', '')
             
-            # 現在の検索条件で検索を確実に再実行（検索結果を更新するため）
+            # 現在の検索条件で検索を確実に再実行(検索結果を更新するため)
             if old_term:
                 # 検索実行前の最終チェック
                 # 数件のサンプルを表示
@@ -1184,7 +1185,7 @@ class SearchManager(EventAwareManager):
             # 代替策として全インデックスを再構築
             self.search_index = []
             self.build_search_index()
-            print(f"[OK] 代替として検索インデックスを完全に再構築しました（{len(self.search_index)}ノード）")
+            print(f"[OK] 代替として検索インデックスを完全に再構築しました({len(self.search_index)}ノード)")
             
             # 検索語があれば再検索を強制実行
             if hasattr(self, 'search_term') and self.search_term:

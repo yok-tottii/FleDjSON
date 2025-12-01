@@ -387,12 +387,14 @@ class SearchManager(EventAwareManager):
         """
         検索インデックス項目からマッチしたフィールドパスを特定する
 
+        より具体的なパス（リーフノード）のみを返し、親パスは除外する
+
         Args:
             item: 検索インデックスの項目
             search_term_lower: 小文字に変換された検索語
 
         Returns:
-            マッチしたフィールドパスのリスト
+            マッチしたフィールドパスのリスト（最も具体的なパスのみ）
         """
         matched_paths = []
         field_text_map = item.get("field_text_map", {})
@@ -401,11 +403,30 @@ class SearchManager(EventAwareManager):
             if search_term_lower in field_text:
                 matched_paths.append(field_path)
 
+        if not matched_paths:
+            return []
+
         # マッチしたパスを優先度でソート（より具体的なパスを先に）
         # 例: "profile.email" は "profile" より優先
         matched_paths.sort(key=lambda x: (-x.count('.'), -x.count('['), x))
 
-        return matched_paths
+        # 親パスを除外（子パスが存在する場合）
+        # 例: ["organization.name", "organization"] → ["organization.name"]
+        filtered_paths = []
+        for path in matched_paths:
+            # このパスが他のマッチしたパスの親でないかチェック
+            is_parent = False
+            for other_path in matched_paths:
+                if other_path != path and (
+                    other_path.startswith(path + ".") or
+                    other_path.startswith(path + "[")
+                ):
+                    is_parent = True
+                    break
+            if not is_parent:
+                filtered_paths.append(path)
+
+        return filtered_paths
 
     def perform_search(self) -> None:
         """検索を実行し結果を更新"""

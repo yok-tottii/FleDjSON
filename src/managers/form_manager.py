@@ -549,6 +549,8 @@ class FormManager(EventAwareManager):
         """
         フィールドがハイライト対象かどうかを判定する
 
+        マッチしたフィールドのみをハイライトする（親子への伝播なし）
+
         Args:
             field_path: フィールドのパス
 
@@ -559,20 +561,8 @@ class FormManager(EventAwareManager):
         if not highlight_paths:
             return False
 
-        # 完全一致チェック
-        if field_path in highlight_paths:
-            return True
-
-        # 親パスが含まれているかチェック（例: "profile" がハイライト対象なら "profile.name" もハイライト）
-        for hp in highlight_paths:
-            # 親パスとしてマッチするかチェック
-            if field_path.startswith(hp + ".") or field_path.startswith(hp + "["):
-                return True
-            # 子パスとしてマッチするかチェック（例: "tags[0]" がハイライト対象なら "tags" もハイライト）
-            if hp.startswith(field_path + ".") or hp.startswith(field_path + "["):
-                return True
-
-        return False
+        # 完全一致のみチェック（より限定的なハイライト）
+        return field_path in highlight_paths
 
     def _get_highlight_style(self) -> dict:
         """

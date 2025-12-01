@@ -53,7 +53,7 @@ class FormManager(EventAwareManager):
             event_hub=app_state.get("event_hub")
         )
 
-        # 他のマネージャーへの参照（初期化後に設定される）
+        # 他のマネージャーへの参照(初期化後に設定される)
         self.ui_state_manager = None
         self.data_manager = None
         self.ui_manager = None
@@ -70,7 +70,7 @@ class FormManager(EventAwareManager):
         if "removed_fields" not in self.app_state:
             self.app_state["removed_fields"] = set()
             
-        # 入力順序追跡用のマップを初期化（キーパスを入力順にマッピング）
+        # 入力順序追跡用のマップを初期化(キーパスを入力順にマッピング)
         self._key_input_order = {}
         self._input_counter = 0  # 入力順序をカウントする変数
 
@@ -104,7 +104,7 @@ class FormManager(EventAwareManager):
             # フォームが空の初期状態の場合
             if len(detail_form.controls) == 1 and hasattr(detail_form.controls[0], 'value'):
                 current_value = detail_form.controls[0].value
-                # 初期メッセージかどうかを判定（言語非依存）
+                # 初期メッセージかどうかを判定(言語非依存)
                 if current_value in ["ノードを選択してください", "Select a node"]:
                     detail_form.controls[0].value = t("form.select_node_message")
                     detail_form.controls[0].update()
@@ -195,10 +195,10 @@ class FormManager(EventAwareManager):
         for i in range(len(parts) - 1, 0, -1):
             parent_path = '.'.join(parts[:i])
             if parent_path in self._key_input_order:
-                # 親パスの順序 + 0.1 を返す（親より少し後の順序にする）
+                # 親パスの順序 + 0.1 を返す(親より少し後の順序にする)
                 return self._key_input_order[parent_path] + 0.1
                 
-        # 配列インデックスの処理（例: tags[0]）
+        # 配列インデックスの処理(例: tags[0])
         array_match = re.match(r'^(.+)\[\d+\]$', key_path)
         if array_match:
             array_path = array_match.group(1)
@@ -268,7 +268,7 @@ class FormManager(EventAwareManager):
             print("[INFO] In add mode, skipping detail form update.")
             return
             
-        # 削除確認モードを解除（UIStateManagerと整合させる）
+        # 削除確認モードを解除(UIStateManagerと整合させる)
         ui_state_manager = self.app_state.get("ui_state_manager")
         if ui_state_manager:
             ui_state_manager.set_delete_confirm_mode(False)
@@ -394,7 +394,7 @@ class FormManager(EventAwareManager):
                     cancel_button.on_click = self.cancel_changes
                     cancel_button.disabled = not is_dirty
                 
-                # 削除ボタンを追加（通常モード用）
+                # 削除ボタンを追加(通常モード用)
                 delete_button = self.ui_controls.get("detail_delete_button")
                 if not delete_button:
                     delete_button = ft.OutlinedButton(
@@ -450,9 +450,12 @@ class FormManager(EventAwareManager):
         detail_form_column.controls = controls
         detail_form_column.update()
         print(f"[OK] Detail form column updated for node: {selected_node_id}")
-        
+
         # ボタンの状態を明示的に更新 (is_dirty に基づいて)
         self.update_detail_buttons_state()
+
+        # ハイライトされたフィールドへ自動スクロール
+        self._scroll_to_highlighted_field()
     
     def clear_detail_form(self):
         """詳細フォームの内容をクリアする"""
@@ -483,7 +486,7 @@ class FormManager(EventAwareManager):
         detail_form_column.update()
         print("[OK] Detail form cleared")
         
-        # UIStateManagerと状態同期（選択ノードIDがクリアされたことを通知）
+        # UIStateManagerと状態同期(選択ノードIDがクリアされたことを通知)
         ui_state_manager = self.app_state.get("ui_state_manager")
         if ui_state_manager and old_selected_id:
             ui_state_manager.deselect_node()
@@ -529,7 +532,7 @@ class FormManager(EventAwareManager):
                 except Exception as ex:
                     print(f"[ERROR] Error updating cancel_button: {ex}")
         
-        # delete_buttonがある場合に更新を確認（削除ボタンはis_dirtyに依存しない）
+        # delete_buttonがある場合に更新を確認(削除ボタンはis_dirtyに依存しない)
         if delete_button and hasattr(delete_button, 'page') and delete_button.page is not None:
             try:
                 delete_button.update()
@@ -542,6 +545,88 @@ class FormManager(EventAwareManager):
             if self.app_state.get("selected_node_id"):
                 self.update_detail_form(self.app_state.get("selected_node_id"))
     
+    def _is_field_highlighted(self, field_path: str) -> bool:
+        """
+        フィールドがハイライト対象かどうかを判定する
+
+        マッチしたフィールドのみをハイライトする(親子への伝播なし)
+
+        Args:
+            field_path: フィールドのパス
+
+        Returns:
+            ハイライト対象の場合True
+        """
+        highlight_paths = self.app_state.get("highlight_field_paths", [])
+        if not highlight_paths:
+            return False
+
+        # 完全一致のみチェック(より限定的なハイライト)
+        return field_path in highlight_paths
+
+    def _get_highlight_style(self) -> dict:
+        """
+        ハイライト用のスタイル設定を返す
+
+        Returns:
+            ハイライトスタイルの辞書
+        """
+        return {
+            "bgcolor": Colors.with_opacity(0.15, Colors.YELLOW),
+            "border_color": Colors.AMBER,
+            "border_width": 2,
+        }
+
+    def _scroll_to_highlighted_field(self) -> None:
+        """
+        ハイライトされたフィールドへ自動スクロールする
+        """
+        highlight_paths = self.app_state.get("highlight_field_paths", [])
+        if not highlight_paths:
+            return
+
+        # 最初のハイライトパスを取得（空チェックは上で済み）
+        first_highlight_path = highlight_paths[0]
+
+        # detail_form_columnを取得
+        detail_form_column = self.ui_controls.get("detail_form_column")
+        if not detail_form_column:
+            return
+
+        # ハイライトされたコントロールを再帰的に検索（key属性を優先）
+        def find_control_with_key(controls, target_key):
+            """key属性を持つコントロールを検索"""
+            for control in controls:
+                # key属性を直接チェック
+                if hasattr(control, 'key') and control.key == target_key:
+                    return control
+
+                # 子コントロールを再帰的に検索
+                if hasattr(control, 'controls'):
+                    result = find_control_with_key(control.controls, target_key)
+                    if result:
+                        return result
+                if hasattr(control, 'content') and control.content:
+                    if hasattr(control.content, 'controls'):
+                        result = find_control_with_key(control.content.controls, target_key)
+                        if result:
+                            return result
+
+            return None
+
+        # key属性でコントロールを検索
+        target_key = f"field_{first_highlight_path}"
+        highlighted_control = find_control_with_key(detail_form_column.controls, target_key)
+
+        if highlighted_control:
+            try:
+                # scroll_toメソッドが使用可能な場合はスクロール
+                if hasattr(detail_form_column, 'scroll_to'):
+                    detail_form_column.scroll_to(key=target_key, duration=300)
+                print(f"[SCROLL] ハイライトフィールド '{first_highlight_path}' へスクロールしました")
+            except (AttributeError, RuntimeError, ValueError) as e:
+                print(f"[WARNING] スクロールに失敗: {e}")
+
     def build_form_controls(self, data_obj: dict, field_details_map: dict, key_prefix: str = "") -> list[ft.Control]:
         """
         データオブジェクトに基づいてフォームコントロールを再帰的に構築する
@@ -591,14 +676,21 @@ class FormManager(EventAwareManager):
 
             control_to_add = None
 
+            # ハイライト判定
+            is_highlighted = self._is_field_highlighted(current_key_path)
+            highlight_style = self._get_highlight_style() if is_highlighted else {}
+
             # 辞書型の場合は再帰的に処理
             if field_type == "dict":
                 nested_controls = self.build_form_controls(value, field_details_map, current_key_path)
                 if nested_controls:
+                    # ハイライト時はアイコンも色変更
+                    header_icon_color = Colors.AMBER if is_highlighted else None
                     header_content = ft.Row(
                         [
-                            ft.Icon(ft.Icons.SETTINGS_INPUT_COMPONENT),
-                            ft.Text(key, weight=ft.FontWeight.W_500)
+                            ft.Icon(ft.Icons.SETTINGS_INPUT_COMPONENT, color=header_icon_color),
+                            ft.Text(key, weight=ft.FontWeight.W_500,
+                                   color=Colors.AMBER_900 if is_highlighted else None)
                         ],
                     )
                     clickable_header = ft.Container(
@@ -606,8 +698,9 @@ class FormManager(EventAwareManager):
                         on_click=toggle_expansion_func,
                         ink=True,
                         border_radius=ft.border_radius.all(4),
+                        bgcolor=highlight_style.get("bgcolor") if is_highlighted else None,
                     )
-                    control_to_add = ft.ExpansionPanelList(
+                    expansion_panel = ft.ExpansionPanelList(
                         expand_icon_color=Colors.with_opacity(0.5, Colors.ON_SURFACE),
                         elevation=0,
                         divider_color=Colors.with_opacity(0.3, Colors.OUTLINE),
@@ -624,6 +717,18 @@ class FormManager(EventAwareManager):
                         ],
                         data=current_key_path
                     )
+                    # ハイライト時はボーダーでラップ
+                    if is_highlighted:
+                        control_to_add = ft.Container(
+                            content=expansion_panel,
+                            border=ft.border.all(highlight_style.get("border_width", 2),
+                                                highlight_style.get("border_color", Colors.AMBER)),
+                            border_radius=5,
+                            key=f"field_{current_key_path}",  # スクロール用のキー属性
+                            data={"path": current_key_path, "highlighted": True}
+                        )
+                    else:
+                        control_to_add = expansion_panel
                 else:
                     text_area = ft.TextField(
                         label=key,
@@ -632,16 +737,19 @@ class FormManager(EventAwareManager):
                         min_lines=3,
                         max_lines=10,
                         dense=True,
+                        key=f"field_{current_key_path}",  # スクロール用のキー属性
                         data={"path": current_key_path, "type": "dict"},
                         on_change=self.on_form_field_change,
-                        hint_text=t("form.dict_json_hint")
+                        hint_text=t("form.dict_json_hint"),
+                        bgcolor=highlight_style.get("bgcolor") if is_highlighted else None,
+                        border_color=highlight_style.get("border_color") if is_highlighted else None,
                     )
                     control_to_add = ft.Container(
                         content=ft.Column([
                             ft.Text(t("form.dict_type"), size=12, color=Colors.ON_SURFACE_VARIANT),
                             text_area
                         ]),
-                        data={"path": current_key_path, "type": "dict"}
+                        data={"path": current_key_path, "type": "dict", "highlighted": is_highlighted}
                     )
 
             # リスト型の場合
@@ -650,9 +758,14 @@ class FormManager(EventAwareManager):
                     list_items_controls = []
                     for index, item in enumerate(value):
                         item_prefix = f"{current_key_path}[{index}]"
+                        # リスト要素のハイライト判定
+                        is_item_highlighted = self._is_field_highlighted(item_prefix)
+                        item_highlight_style = self._get_highlight_style() if is_item_highlighted else {}
+
                         if isinstance(item, dict):
                             dict_header = ft.Row([
-                                ft.Text(f"[{index}]", weight=ft.FontWeight.W_500),
+                                ft.Text(f"[{index}]", weight=ft.FontWeight.W_500,
+                                       color=Colors.AMBER_900 if is_item_highlighted else None),
                                 ft.IconButton(
                                     icon=ft.Icons.DELETE_OUTLINE,
                                     icon_size=16,
@@ -663,24 +776,33 @@ class FormManager(EventAwareManager):
                             ])
                             list_items_controls.append(dict_header)
                             nested_item_controls = self.build_form_controls(item, field_details_map, item_prefix)
+                            # ハイライト時はボーダー色を変更
+                            item_border_color = item_highlight_style.get("border_color", Colors.OUTLINE_VARIANT) if is_item_highlighted else Colors.OUTLINE_VARIANT
+                            item_border_width = item_highlight_style.get("border_width", 1) if is_item_highlighted else 1
                             list_items_controls.append(
                                 ft.Container(
                                     content=ft.Column(nested_item_controls, spacing=5),
                                     padding=ft.padding.only(left=15),
-                                    border=ft.border.all(1, Colors.OUTLINE_VARIANT),
+                                    border=ft.border.all(item_border_width, item_border_color),
                                     border_radius=5,
-                                    margin=ft.margin.only(bottom=10)
+                                    margin=ft.margin.only(bottom=10),
+                                    bgcolor=item_highlight_style.get("bgcolor") if is_item_highlighted else None,
+                                    data={"path": item_prefix, "highlighted": is_item_highlighted}
                                 )
                             )
                         else:
+                            # プリミティブ要素のハイライト
                             item_row = ft.Row([
-                                ft.Text(f"[{index}]"),
+                                ft.Text(f"[{index}]",
+                                       color=Colors.AMBER_900 if is_item_highlighted else None),
                                 ft.TextField(
                                     value=str(item),
                                     expand=True,
                                     dense=True,
                                     data={"path": item_prefix, "type": "list_item"},
-                                    on_change=self.on_form_field_change
+                                    on_change=self.on_form_field_change,
+                                    bgcolor=item_highlight_style.get("bgcolor") if is_item_highlighted else None,
+                                    border_color=item_highlight_style.get("border_color") if is_item_highlighted else None,
                                 ),
                                 ft.IconButton(
                                     icon=ft.Icons.DELETE_OUTLINE,
@@ -699,10 +821,13 @@ class FormManager(EventAwareManager):
                         data=current_key_path
                     )
 
+                    # リスト全体のハイライト
+                    header_icon_color = Colors.AMBER if is_highlighted else None
                     header_content = ft.Row(
                         [
-                            ft.Icon(ft.Icons.FORMAT_LIST_NUMBERED),
-                            ft.Text(f"{key} [{len(value)} items]", weight=ft.FontWeight.W_500)
+                            ft.Icon(ft.Icons.FORMAT_LIST_NUMBERED, color=header_icon_color),
+                            ft.Text(f"{key} [{len(value)} items]", weight=ft.FontWeight.W_500,
+                                   color=Colors.AMBER_900 if is_highlighted else None)
                         ],
                     )
                     clickable_header = ft.Container(
@@ -710,8 +835,9 @@ class FormManager(EventAwareManager):
                         on_click=toggle_expansion_func,
                         ink=True,
                         border_radius=ft.border_radius.all(4),
+                        bgcolor=highlight_style.get("bgcolor") if is_highlighted else None,
                     )
-                    control_to_add = ft.ExpansionPanelList(
+                    expansion_panel = ft.ExpansionPanelList(
                         expand_icon_color=Colors.with_opacity(0.5, Colors.ON_SURFACE),
                         elevation=0,
                         divider_color=Colors.with_opacity(0.3, Colors.OUTLINE),
@@ -731,6 +857,18 @@ class FormManager(EventAwareManager):
                         ],
                         data=current_key_path
                     )
+                    # ハイライト時はボーダーでラップ
+                    if is_highlighted:
+                        control_to_add = ft.Container(
+                            content=expansion_panel,
+                            border=ft.border.all(highlight_style.get("border_width", 2),
+                                                highlight_style.get("border_color", Colors.AMBER)),
+                            border_radius=5,
+                            key=f"field_{current_key_path}",  # スクロール用のキー属性
+                            data={"path": current_key_path, "highlighted": True}
+                        )
+                    else:
+                        control_to_add = expansion_panel
                 else:
                     text_area = ft.TextField(
                         label=key,
@@ -739,26 +877,44 @@ class FormManager(EventAwareManager):
                         min_lines=3,
                         max_lines=10,
                         dense=True,
+                        key=f"field_{current_key_path}",  # スクロール用のキー属性
                         data=current_key_path,
                         on_change=self.on_form_field_change,
-                        hint_text=t("form.list_json_hint")
+                        hint_text=t("form.list_json_hint"),
+                        bgcolor=highlight_style.get("bgcolor") if is_highlighted else None,
+                        border_color=highlight_style.get("border_color") if is_highlighted else None,
                     )
                     control_to_add = ft.Container(
                         content=ft.Column([
                             ft.Text(t("form.list_type"), size=12, color=Colors.ON_SURFACE_VARIANT),
                             text_area
                         ]),
-                        data=current_key_path
+                        data={"path": current_key_path, "highlighted": is_highlighted}
                     )
 
             # ブール型の場合
             elif field_type == "bool":
-                control_to_add = ft.Checkbox(
+                checkbox = ft.Checkbox(
                     label=key,
                     value=bool(value),
                     data={"path": current_key_path, "type": "bool"},
-                    on_change=self.on_form_field_change
+                    on_change=self.on_form_field_change,
+                    fill_color=Colors.AMBER if is_highlighted else None,
                 )
+                # ハイライト時はコンテナでラップ
+                if is_highlighted:
+                    control_to_add = ft.Container(
+                        content=checkbox,
+                        bgcolor=highlight_style.get("bgcolor"),
+                        border=ft.border.all(highlight_style.get("border_width", 2),
+                                            highlight_style.get("border_color", Colors.AMBER)),
+                        border_radius=5,
+                        padding=5,
+                        key=f"field_{current_key_path}",  # スクロール用のキー属性
+                        data={"path": current_key_path, "highlighted": True}
+                    )
+                else:
+                    control_to_add = checkbox
 
             # 数値型の場合
             elif field_type == "int" or field_type == "float":
@@ -766,13 +922,16 @@ class FormManager(EventAwareManager):
                     label=key,
                     value=str(value),
                     keyboard_type=ft.KeyboardType.NUMBER,
-                    data={"path": current_key_path, "is_id": is_id_field},
+                    key=f"field_{current_key_path}",  # スクロール用のキー属性
+                    data={"path": current_key_path, "is_id": is_id_field, "highlighted": is_highlighted},
                     dense=True,
                     hint_text=t("form.id_field_hint") if is_id_field else None,
-                    on_change=self.on_id_field_change if is_id_field else self.on_form_field_change
+                    on_change=self.on_id_field_change if is_id_field else self.on_form_field_change,
+                    bgcolor=highlight_style.get("bgcolor") if is_highlighted else None,
+                    border_color=highlight_style.get("border_color") if is_highlighted else None,
                 )
 
-            # その他の型（文字列など）の場合
+            # その他の型(文字列など)の場合
             else:
                 control_to_add = ft.TextField(
                     label=key,
@@ -781,9 +940,12 @@ class FormManager(EventAwareManager):
                     min_lines=1,
                     max_lines=5 if isinstance(value, str) and (len(value) > 60 or '\n' in value) else 1,
                     dense=True,
-                    data={"path": current_key_path, "is_id": is_id_field},
+                    key=f"field_{current_key_path}",  # スクロール用のキー属性
+                    data={"path": current_key_path, "is_id": is_id_field, "highlighted": is_highlighted},
                     hint_text=t("form.id_field_hint") if is_id_field else None,
-                    on_change=self.on_id_field_change if is_id_field else self.on_form_field_change
+                    on_change=self.on_id_field_change if is_id_field else self.on_form_field_change,
+                    bgcolor=highlight_style.get("bgcolor") if is_highlighted else None,
+                    border_color=highlight_style.get("border_color") if is_highlighted else None,
                 )
 
             if control_to_add:
@@ -846,7 +1008,7 @@ class FormManager(EventAwareManager):
                     # サンプルが見つからない場合は最小限のオブジェクトを作成
                     sample_obj = {id_key: ""}
 
-                # テンプレートオブジェクトの作成（ディープコピー）
+                # テンプレートオブジェクトの作成(ディープコピー)
                 template_obj = copy.deepcopy(sample_obj)
 
                 # テンプレートの値をリセット
@@ -946,7 +1108,7 @@ class FormManager(EventAwareManager):
                          if is_uuid_like:
                              new_id = str(uuid.uuid4())
                          else:
-                             # UUID形式でなければ、単純な文字列IDを生成（例: "new_item_1"）
+                             # UUID形式でなければ、単純な文字列IDを生成(例: "new_item_1")
                              count = 1
                              while f"new_item_{count}" in existing_ids:
                                  count += 1
@@ -1079,7 +1241,7 @@ class FormManager(EventAwareManager):
         # フィールドの役割に基づいてソート
         field_order = []
         for field, value in template_data.items():
-            # フィールドの重要度に基づいて順序付け（IDフィールド、名前フィールド、その他の順）
+            # フィールドの重要度に基づいて順序付け(IDフィールド、名前フィールド、その他の順)
             if field_roles.get(field, "") in ["id", "parent_id"]:
                 order = 0
             elif field_roles.get(field, "") in ["name", "label", "title"]:
@@ -1092,7 +1254,7 @@ class FormManager(EventAwareManager):
         for field, _ in sorted(field_order, key=lambda x: x[1]):
             value = template_data.get(field)
             
-            # フィールドの型情報（利用可能な場合）
+            # フィールドの型情報(利用可能な場合)
             field_type = None
             data_templates = self.app_state.get("data_templates", {})
             if "main" in data_templates and "fields" in data_templates["main"]:
@@ -1225,7 +1387,7 @@ class FormManager(EventAwareManager):
                     # サンプルが見つからない場合は最小限のオブジェクトを作成
                     sample_obj = {id_key: ""}
 
-                # テンプレートオブジェクトの作成（ディープコピー）
+                # テンプレートオブジェクトの作成(ディープコピー)
                 template_obj = copy.deepcopy(sample_obj)
 
                 # テンプレートの値をリセット
@@ -1325,7 +1487,7 @@ class FormManager(EventAwareManager):
                          if is_uuid_like:
                              new_id = str(uuid.uuid4())
                          else:
-                             # UUID形式でなければ、単純な文字列IDを生成（例: "new_item_1"）
+                             # UUID形式でなければ、単純な文字列IDを生成(例: "new_item_1")
                              count = 1
                              while f"new_item_{count}" in existing_ids:
                                  count += 1
@@ -1536,7 +1698,7 @@ class FormManager(EventAwareManager):
             field_container = ft.Container(
                 content=ft.Row(
                     [
-                        # フィールドのコントロール（後で追加）
+                        # フィールドのコントロール(後で追加)
                         ft.Container(expand=True),  # プレースホルダー
                         # 削除ボタン
                         ft.IconButton(
@@ -1751,7 +1913,7 @@ class FormManager(EventAwareManager):
                 field_container.content.controls[0] = number_field
                 control_to_add = field_container
 
-            # その他の型（文字列など）の場合
+            # その他の型(文字列など)の場合
             else:
                 text_field = ft.TextField(
                     label=key,
@@ -1905,7 +2067,7 @@ class FormManager(EventAwareManager):
 
             new_id_str = str(new_value)
 
-            # IDの重複チェック（リアルタイム） - オプションでエラー表示
+            # IDの重複チェック(リアルタイム) - オプションでエラー表示
             if new_id_str != current_node_id and new_id_str in self.app_state["data_map"]:
                 control.error_text = t("error.id_already_used")
             else:
@@ -1970,7 +2132,7 @@ class FormManager(EventAwareManager):
             if isinstance(self.app_state["raw_data"], list):
                 raw_obj_ref = next((item for item in self.app_state["raw_data"] if isinstance(item, dict) and str(item.get(id_key)) == current_node_id), None)
             elif isinstance(self.app_state["raw_data"], dict) and str(self.app_state["raw_data"].get(id_key)) == current_node_id:
-                # ルートが辞書の場合（非推奨だが考慮）
+                # ルートが辞書の場合(非推奨だが考慮)
                 raw_obj_ref = self.app_state["raw_data"]
 
             if raw_obj_ref is None:
@@ -2029,7 +2191,7 @@ class FormManager(EventAwareManager):
 
         for key_path in sorted_keys:
             value_to_set = self.app_state["edit_buffer"][key_path]
-            # ID自体の更新は data_map キー変更後に行うためスキップ（new_id が設定されている場合）
+            # ID自体の更新は data_map キー変更後に行うためスキップ(new_id が設定されている場合)
             if key_path == id_key and new_id is not None:
                 print(f"  Skipping data_map value update for ID key '{key_path}' for now.")
                 # raw_data の ID はここで更新しておく
@@ -2117,14 +2279,14 @@ class FormManager(EventAwareManager):
                         force_label_update=True
                     )
 
-            # ツリービュー全体を更新（左ペイン） - ID変更があった場合、表示が変わる
+            # ツリービュー全体を更新(左ペイン) - ID変更があった場合、表示が変わる
             if ui_manager:
                 ui_manager.update_tree_view()
 
-            # 詳細フォームを再表示（右ペイン） - 保存後は最新のデータで再描画 (更新後の current_node_id で)
+            # 詳細フォームを再表示(右ペイン) - 保存後は最新のデータで再描画 (更新後の current_node_id で)
             self.update_detail_form(current_node_id)
 
-            # 検索インデックスを更新（検索機能が利用可能な場合）
+            # 検索インデックスを更新(検索機能が利用可能な場合)
             search_manager = self.app_state.get("search_manager")
             if search_manager:
                 # 現在のノードIDの検索インデックスを更新
@@ -2166,7 +2328,7 @@ class FormManager(EventAwareManager):
 
     def apply_edit_buffer_to_data(self) -> tuple[bool, dict]:
         """
-        edit_bufferの内容をdata_mapとraw_dataに適用する（UIは更新しない）
+        edit_bufferの内容をdata_mapとraw_dataに適用する(UIは更新しない)
         
         Returns:
             tuple[bool, dict]: (成功フラグ, エラー辞書)
@@ -2324,7 +2486,7 @@ class FormManager(EventAwareManager):
 
         selected_node_id = self.app_state.get("selected_node_id")
         if selected_node_id:
-            # フォームを元のデータ（変更前）で再描画
+            # フォームを元のデータ(変更前)で再描画
             self.update_detail_form(selected_node_id)
             print(f"[CANCEL] Changes canceled. Restored form for node {selected_node_id}.")
         else:
@@ -2457,13 +2619,13 @@ class FormManager(EventAwareManager):
                 if ui_state_manager:
                     ui_state_manager.set_edit_mode(True)
 
-            # UIを更新（フォーム全体を再描画）
+            # UIを更新(フォーム全体を再描画)
             self.update_detail_form(current_node_id)
 
             # ボタンの状態を確実に更新
             self.update_detail_buttons_state()
 
-            # 検索インデックスを即時更新（項目追加後にすぐ検索できるようにするため）
+            # 検索インデックスを即時更新(項目追加後にすぐ検索できるようにするため)
             search_manager = self.app_state.get("search_manager")
             if search_manager:
                 # バッファに変更を適用した一時的なノードデータを作成し、それを使って検索インデックスを更新
@@ -2555,7 +2717,7 @@ class FormManager(EventAwareManager):
                 self.app_state["edit_buffer"][key_path] = new_list
                 print(f"  Buffered list change for {key_path}: {len(new_list)} items")
 
-                # 関連するバッファエントリの削除（例: list[index].field）
+                # 関連するバッファエントリの削除(例: list[index].field)
                 prefix_to_remove = f"{key_path}[{index}]"
                 keys_to_remove = [k for k in self.app_state["edit_buffer"] if k.startswith(prefix_to_remove)]
                 if keys_to_remove:
@@ -2573,7 +2735,7 @@ class FormManager(EventAwareManager):
                     if ui_state_manager:
                         ui_state_manager.set_edit_mode(True)
 
-                # UIを更新（フォーム全体を再描画）
+                # UIを更新(フォーム全体を再描画)
                 self.update_detail_form(current_node_id)
                 print(f"[OK] Item deletion buffered for {key_path}[{index}]. Form updated.")
                 # 代替通知システムを使用
@@ -2798,7 +2960,7 @@ class FormManager(EventAwareManager):
                 # フォームを更新
                 self.update_add_form()
 
-                # 完了通知（代替システム）
+                # 完了通知(代替システム)
                 try:
                     from notification_system import NotificationSystem
                     notification_system = NotificationSystem(page)
@@ -2920,7 +3082,7 @@ class FormManager(EventAwareManager):
                          if is_uuid_like:
                              node_id = str(uuid.uuid4())
                          else:
-                             # UUID形式でなければ、単純な文字列IDを生成（例: "new_item_1"）
+                             # UUID形式でなければ、単純な文字列IDを生成(例: "new_item_1")
                              count = 1
                              while f"new_item_{count}" in existing_ids:
                                  count += 1
@@ -3002,7 +3164,7 @@ class FormManager(EventAwareManager):
             if ui_manager:
                 ui_manager.update_tree_view()
 
-            # 検索インデックスを更新（重要：新規追加ノードを検索可能にする）
+            # 検索インデックスを更新(重要：新規追加ノードを検索可能にする)
             search_manager = self.app_state.get("search_manager")
             if search_manager:
                 # 新規ノードの場合は全インデックスを再構築する方が確実
@@ -3075,7 +3237,7 @@ class FormManager(EventAwareManager):
             # 削除確認モードをONに
             self.app_state["delete_confirm_mode"] = True
 
-        # ノードの表示ラベルを取得（より人間が読みやすい形で表示）
+        # ノードの表示ラベルを取得(より人間が読みやすい形で表示)
         ui_manager = self.app_state.get("ui_manager")
         node_data = self.app_state["data_map"].get(node_id, {})
         
@@ -3174,7 +3336,7 @@ class FormManager(EventAwareManager):
             # 詳細フォームをクリア
             self.clear_detail_form()
 
-            # 完了通知（代替システム）
+            # 完了通知(代替システム)
             try:
                 from notification_system import NotificationSystem
                 notification_system = NotificationSystem(e.page)
@@ -3264,7 +3426,7 @@ class FormManager(EventAwareManager):
             # 追加モードのフォームを更新
             self.update_add_form()
 
-            # フィールド削除通知（代替システム）
+            # フィールド削除通知(代替システム)
             try:
                 from notification_system import NotificationSystem
                 notification_system = NotificationSystem(e.page)

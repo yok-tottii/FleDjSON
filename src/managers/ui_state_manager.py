@@ -36,7 +36,7 @@ class UIStateManager:
             app_state (Dict): アプリケーションの状態を保持する辞書
             ui_controls (Dict): UIコントロールを保持する辞書
             page (ft.Page): Fletページオブジェクト
-            app_instance: FlexiJSONEditorAppのインスタンス（オプション）
+            app_instance: FlexiJSONEditorAppのインスタンス(オプション)
         """
         self.app_state = app_state
         self.ui_controls = ui_controls
@@ -52,7 +52,7 @@ class UIStateManager:
             "is_add_mode": False,              # 追加モードフラグ
             "is_edit_mode": False,             # 編集モードフラグ
             "is_delete_confirm_mode": False,   # 削除確認モードフラグ
-            "current_view": "tree",            # 現在のビュー（tree/detail/add）
+            "current_view": "tree",            # 現在のビュー(tree/detail/add)
             "form_type": None,                 # 現在のフォームタイプ
             "selected_node_id": None,          # 選択されたノードID
             "control_states": {},              # コントロールの状態を保持する辞書
@@ -69,11 +69,11 @@ class UIStateManager:
         print_init("[OK] UIStateManager initialized.")
     
     def _safe_update_control(self, control, control_name: str = "control"):
-        """コントロールを安全に更新する（ページ追加チェック付き）"""
+        """コントロールを安全に更新する(ページ追加チェック付き)"""
         try:
             if hasattr(control, '_page') and control._page is not None:
                 control.update()
-        except Exception as e:
+        except (AttributeError, RuntimeError, ValueError) as e:
             if "must be added to the page first" not in str(e):
                 print(f"[WARNING] {control_name}.update()エラー: {e}")
     
@@ -96,7 +96,7 @@ class UIStateManager:
             self._ui_state["current_view"] = "tree"
 
     def _sync_to_app_state(self):
-        """UIStateManagerの状態をapp_stateに同期（双方向の整合性を保つ）"""
+        """UIStateManagerの状態をapp_stateに同期(双方向の整合性を保つ)"""
         self.app_state["add_mode"] = self._ui_state["is_add_mode"]
         self.app_state["is_dirty"] = self._ui_state["is_edit_mode"]
         self.app_state["delete_confirm_mode"] = self._ui_state["is_delete_confirm_mode"]
@@ -143,7 +143,7 @@ class UIStateManager:
         return self._ui_state["is_delete_confirm_mode"]
     
     def get_current_view(self) -> str:
-        """現在のビューを返す（tree/detail/add）"""
+        """現在のビューを返す(tree/detail/add)"""
         return self._ui_state["current_view"]
     
     def get_form_type(self) -> Optional[str]:
@@ -326,7 +326,7 @@ class UIStateManager:
                 fm.update_detail_form(self.app_state.get("selected_node_id"))
     
     def set_current_view(self, view: str):
-        """現在のビューを設定（tree/detail/add）"""
+        """現在のビューを設定(tree/detail/add)"""
         if view in ["tree", "detail", "add"]:
             self.set_state("current_view", view)
     
@@ -514,6 +514,15 @@ class UIStateManager:
                     True
                 )
 
+        # ツリービューで選択ノードにスクロール
+        tree_view = self.ui_controls.get("tree_view")
+        if tree_view and hasattr(tree_view, 'scroll_to'):
+            try:
+                tree_view.scroll_to(key=f"tree_node_{node_id}", duration=300)
+                print(f"[SCROLL] ツリービューでノード '{node_id}' にスクロールしました")
+            except (AttributeError, RuntimeError, ValueError) as e:
+                print(f"[WARNING] ツリービューのスクロールに失敗: {e}")
+
         # 詳細フォームの更新が必要なことを示すフラグ
         self.set_detail_form_dirty(True)
 
@@ -521,7 +530,7 @@ class UIStateManager:
         if node_id:
             self.set_current_view("detail")
 
-        # UIを更新（フォームの更新などが実行される）
+        # UIを更新(フォームの更新などが実行される)
         self.refresh_ui()
 
         print(f"[OK] UIStateManager: ノード選択完了 - {node_id}")
@@ -614,7 +623,7 @@ class UIStateManager:
             if form_manager:
                 form_manager.update_add_form()
 
-        # 詳細表示モードの場合（選択されたノードがある）
+        # 詳細表示モードの場合(選択されたノードがある)
         elif self.app_state.get("selected_node_id") is not None:
             print(f"[UPDATE] UIStateManager: 詳細フォーム更新 - ノードID: {self.app_state.get('selected_node_id')}")
             # 詳細フォームの更新が必要な場合またはフォームが表示されている場合

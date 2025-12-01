@@ -446,12 +446,18 @@ class UIStateManager:
     
     # ----- ノード選択状態とハイライト制御 -----
     
-    def select_node(self, node_id: str):
-        """ノードを選択してUIを更新"""
+    def select_node(self, node_id: str, bypass_lock: bool = False):
+        """
+        ノードを選択してUIを更新
+
+        Args:
+            node_id: 選択するノードのID
+            bypass_lock: Trueの場合、移動モードのロックをバイパスする(検索からのジャンプ用)
+        """
         print(f"[USER] UIStateManager: ノード選択 - {node_id}")
 
-        # 移動モードでの選択を防止
-        if not self.app_state.get("tree_drag_locked", True):
+        # 移動モードでの選択を防止(bypass_lockがTrueの場合はスキップ)
+        if not bypass_lock and not self.app_state.get("tree_drag_locked", True):
             print("[LOCK] UIStateManager: 移動モード中は編集できません")
             if self.page:
                 self.page.snack_bar = ft.SnackBar(

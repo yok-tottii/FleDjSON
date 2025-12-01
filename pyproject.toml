@@ -44,3 +44,11 @@ android = false
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+# 日本語テキストに対する誤検知ルールを無効化
+lint.ignore = [
+    "RUF001",  # ambiguous-unicode-character-string (日本語文字列)
+    "RUF002",  # ambiguous-unicode-character-docstring (日本語docstring)
+    "RUF003",  # ambiguous-unicode-character-comment (日本語コメント)
+]

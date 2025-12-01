@@ -149,20 +149,38 @@ class SearchManager(EventAwareManager):
             return
         
         # 検索インデックスの構築
-        def index_node(node: Dict[str, Any], path: str) -> None:
-            """ノードとその子ノードを検索インデックスに追加"""
+        def index_node(
+            node: Dict[str, Any],
+            path: str,
+            override_node_id: Optional[str] = None,
+        ) -> None:
+            """ノードとその子ノードを検索インデックスに追加
+
+            Args:
+                node: インデックスに追加するノード
+                path: ノードのパス
+                override_node_id: 外部から指定するノードID(data_mapのキーなど)
+            """
             # 検索対象フィールドの特定
             id_key = self.app_state.get("id_key", "id")
             label_key = self.app_state.get("label_key", "name")
             children_key = self.app_state.get("children_key", "children")
-            
+
             # ノードが辞書型でない場合はスキップ
             if not isinstance(node, dict):
                 print(f"[WARNING] Warning: スキップしたノード (辞書型ではない): {node}")
                 return
-                
-            # ノードの文字列表現を取得
-            node_id = str(node.get(id_key, ""))
+
+            # ノードIDを取得(override_node_idが指定されていればそれを優先)
+            if override_node_id is not None:
+                node_id = str(override_node_id)
+            else:
+                node_id = str(node.get(id_key, "")) or str(node.get("_path", ""))
+
+            # ノードIDが空の場合はパスから生成
+            if not node_id:
+                node_id = path
+
             node_text = str(node.get(label_key, ""))
             
             # 検索対象に追加するフィールド（キーと値の両方）
@@ -288,13 +306,14 @@ class SearchManager(EventAwareManager):
         if data_map:
             # 辞書のコピーを作成して反復中の変更を防ぐ
             data_map_copy = dict(data_map)
-            for node_id, node_data in data_map_copy.items():
+            for map_node_id, node_data in data_map_copy.items():
                 if isinstance(node_data, dict):
-                    path = f"root:{node_id}"
-                    index_node(node_data, path)
-                    print(f"[OK] Indexed node: {node_id}")
+                    path = f"root:{map_node_id}"
+                    # data_mapのキーをノードIDとして渡す
+                    index_node(node_data, path, override_node_id=map_node_id)
+                    print(f"[OK] Indexed node: {map_node_id}")
                 else:
-                    print(f"[WARNING] Skipped non-dict node: {node_id}")
+                    print(f"[WARNING] Skipped non-dict node: {map_node_id}")
         else:
             # fallback: raw_dataから処理
             for i, node in enumerate(self.app_state["raw_data"]):
@@ -375,7 +394,12 @@ class SearchManager(EventAwareManager):
         # 検索結果がある場合は最初の結果を選択
         if self.search_results:
             self.select_search_result(0)
-            print(f"  選択された結果: ID={self.search_results[0]['id']}")
+            # select_search_result後も結果が存在するか確認してからアクセス
+            if self.search_results and 0 <= self.current_search_index < len(self.search_results):
+                print(
+                    f"  選択された結果: index={self.current_search_index}, "
+                    f"ID={self.search_results[self.current_search_index]['id']}"
+                )
         else:
             print(f"[WARNING] 検索語 '{self.search_term}' に一致する結果が見つかりませんでした")
             # 結果が見つからない場合でも、UIを更新する必要がある
@@ -504,13 +528,13 @@ class SearchManager(EventAwareManager):
         # マネージャー参照を更新
         self._update_manager_references()
         
-        # ノード選択を実行（複数の方法を試行）
+        # ノード選択を実行(複数の方法を試行)
         selection_success = False
-        
-        # 方法1: UIStateManagerを使用
+
+        # 方法1: UIStateManagerを使用(bypass_lock=Trueで移動モードでも選択可能に)
         if self.ui_state_manager and hasattr(self.ui_state_manager, "select_node"):
             try:
-                self.ui_state_manager.select_node(selected_node_id)
+                self.ui_state_manager.select_node(selected_node_id, bypass_lock=True)
                 selection_success = True
                 print(f"[OK] UIStateManagerでノード {selected_node_id} を選択しました")
             except Exception as e:

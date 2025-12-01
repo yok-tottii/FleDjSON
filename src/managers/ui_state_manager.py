@@ -514,6 +514,15 @@ class UIStateManager:
                     True
                 )
 
+        # ツリービューで選択ノードにスクロール
+        tree_view = self.ui_controls.get("tree_view")
+        if tree_view and hasattr(tree_view, 'scroll_to'):
+            try:
+                tree_view.scroll_to(key=f"tree_node_{node_id}", duration=300)
+                print(f"[SCROLL] ツリービューでノード '{node_id}' にスクロールしました")
+            except Exception as e:
+                print(f"[WARNING] ツリービューのスクロールに失敗: {e}")
+
         # 詳細フォームの更新が必要なことを示すフラグ
         self.set_detail_form_dirty(True)
 

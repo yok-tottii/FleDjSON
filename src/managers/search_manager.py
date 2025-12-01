@@ -467,6 +467,27 @@ class SearchManager(EventAwareManager):
         self.search_results = []
         for result in temp_results:
             node_id = result["id"]
+            matched_paths = result.get("matched_paths", [])
+
+            # マッチしたパスがない場合は除外
+            if not matched_paths:
+                print(f"  除外: {node_id} はマッチパスがないため")
+                continue
+
+            # マッチしたパスが全て深いパス（ネストされた子フィールド）のみの場合は除外
+            # 深いパス = ドットまたはブラケットが含まれる（例: products[0].clients[0].industry）
+            has_direct_field = False
+            for path in matched_paths:
+                # 直接的なフィールド = ドットやブラケットを含まない
+                # または、単一レベルの配列インデックス（例: tags[0]）
+                if '.' not in path and path.count('[') <= 1:
+                    has_direct_field = True
+                    break
+
+            if not has_direct_field:
+                print(f"  除外: {node_id} は直接フィールドを持たない（深いパスのみ: {matched_paths[:2]}...）")
+                continue
+
             # このノードIDが他の結果の親でないかチェック
             is_parent = False
             for other_id in result_ids:
@@ -562,38 +583,33 @@ class SearchManager(EventAwareManager):
         for control in self.ui_controls["tree_view"].controls:
             if not hasattr(control, "data") or not control.data:
                 continue
-                
+
             node_id = control.data
-            
+
             # 検索結果に含まれるかどうかでスタイルを変更
             if node_id in result_ids:
                 control.opacity = 1.0
-                
-                # 選択されている検索結果なら強調表示
+
+                # 選択されている検索結果なら強調表示（右ペインと同じ黄色系）
                 if node_id == selected_result_id:
-                    control.bgcolor = ft.Colors.with_opacity(0.2, ft.Colors.BLUE)
+                    control.bgcolor = ft.Colors.with_opacity(0.15, ft.Colors.YELLOW)
                     # 左ボーダーをハイライト
-                    if hasattr(control, "border") and control.border:
-                        control.border = ft.border.only(
-                            left=ft.BorderSide(3, ft.Colors.BLUE)
-                        )
+                    control.border = ft.border.only(
+                        left=ft.BorderSide(3, ft.Colors.AMBER)
+                    )
                 else:
-                    control.bgcolor = ft.Colors.with_opacity(0.1, ft.Colors.BLUE)
+                    control.bgcolor = ft.Colors.with_opacity(0.08, ft.Colors.YELLOW)
                     # 左ボーダーをリセット
-                    if hasattr(control, "border") and control.border:
-                        control.border = ft.border.only(
-                            left=ft.BorderSide(1, ft.Colors.OUTLINE)
-                        )
+                    control.border = ft.border.only(
+                        left=ft.BorderSide(1, ft.Colors.AMBER_200)
+                    )
             else:
                 # 検索結果に含まれないノードは半透明表示
                 control.opacity = 0.4
                 control.bgcolor = None
                 # 左ボーダーをリセット
-                if hasattr(control, "border") and control.border:
-                    control.border = ft.border.only(
-                        left=ft.BorderSide(1, ft.Colors.OUTLINE)
-                    )
-            
+                control.border = None
+
             control.update()
     
     def go_to_next_result(self, e: Optional[ft.ControlEvent] = None) -> None:
